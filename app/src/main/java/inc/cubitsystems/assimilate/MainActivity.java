@@ -10,7 +10,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -24,6 +26,7 @@ import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.documentfile.provider.DocumentFile;
 
 import org.json.JSONArray;
@@ -41,7 +44,6 @@ import java.util.concurrent.Executor;
 public class MainActivity extends AppCompatActivity {
     private static final int REQ_MEDIA = 1001;
     private static final int REQ_SAF = 1002;
-    private static final int REQ_NOTIF = 1003;
     private static final String VAULT_URL = "https://drive.google.com/drive/folders/1OPZA65RyCorgJTFEnaOA05W6SzpB6h2U";
     private WebView webView;
     private int biometricFails = 0;
@@ -94,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
                 String name = c.getString(nameCol);
                 if (name == null) name = "img_" + id + ".jpg";
                 Uri uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id);
-                File out = new File(dir, name);
+                File out = new File(dir, System.currentTimeMillis() + "_" + name);
                 try (InputStream in = getContentResolver().openInputStream(uri);
                      OutputStream os = new FileOutputStream(out)) {
                     if (in == null) continue;
@@ -103,24 +105,28 @@ public class MainActivity extends AppCompatActivity {
                     while ((n = in.read(buf)) > 0) os.write(buf, 0, n);
                     staged++;
                     JSONObject o = new JSONObject();
-                    o.put("name", name);
+                    o.put("name", out.getName());
                     o.put("bytes", out.length());
                     list.put(o);
                 } catch (Exception ignored) {}
             }
-            JSONObject manifest = new JSONObject();
-            manifest.put("vault_folder", BuildConfig.DRIVE_PHOTOS_FOLDER_ID);
-            manifest.put("count", staged);
-            manifest.put("files", list);
-            manifest.put("oauth_configured", BuildConfig.OAUTH_WEB_CLIENT_ID != null && !BuildConfig.OAUTH_WEB_CLIENT_ID.isEmpty());
-            manifest.put("status", "staged_pending_drive_upload");
-            try (FileOutputStream fos = new FileOutputStream(new File(dir, "queue.json"))) {
-                fos.write(manifest.toString(2).getBytes(StandardCharsets.UTF_8));
-            }
+            writeQueueManifest(list, staged);
         } catch (Exception e) {
             return "Stage error: " + e.getMessage();
         }
-        return "Staged " + staged + " photo(s) into upload queue";
+        return "Staged " + staged + " photo(s)";
+    }
+
+    private void writeQueueManifest(JSONArray list, int staged) throws Exception {
+        JSONObject manifest = new JSONObject();
+        manifest.put("vault_folder", BuildConfig.DRIVE_PHOTOS_FOLDER_ID);
+        manifest.put("count", staged);
+        manifest.put("files", list);
+        manifest.put("oauth_configured", BuildConfig.OAUTH_WEB_CLIENT_ID != null && !BuildConfig.OAUTH_WEB_CLIENT_ID.isEmpty());
+        manifest.put("status", "staged");
+        try (FileOutputStream fos = new FileOutputStream(new File(stagingDir(), "queue.json"))) {
+            fos.write(manifest.toString(2).getBytes(StandardCharsets.UTF_8));
+        }
     }
 
     private void showBiometric() {
@@ -138,22 +144,51 @@ public class MainActivity extends AppCompatActivity {
             }
             @Override public void onAuthenticationError(int code, @NonNull CharSequence err) {
                 eval("onBiometricResult('0')");
-                eval("onPermissionResult('Biometric: " + String.valueOf(err).replace("'", "") + " — Retry or use PIN')");
+                eval("onPermissionResult('Biometric: " + String.valueOf(err).replace("'", "") + "')");
             }
             @Override public void onAuthenticationFailed() {
                 biometricFails++;
-                if (biometricFails >= 3) {
-                    Toast.makeText(MainActivity.this, "Fingerprint mismatch — use device PIN when offered", Toast.LENGTH_LONG).show();
-                }
+                if (biometricFails >= 3)
+                    Toast.makeText(MainActivity.this, "Fingerprint mismatch — use device PIN", Toast.LENGTH_LONG).show();
             }
         });
         BiometricPrompt.PromptInfo info = new BiometricPrompt.PromptInfo.Builder()
                 .setTitle("Cubit Assimilate")
                 .setSubtitle("Founder key — fingerprint, face, or PIN")
-                .setDescription("If fingerprint fails, use device PIN/password.")
                 .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK | BiometricManager.Authenticators.DEVICE_CREDENTIAL)
                 .build();
         prompt.authenticate(info);
+    }
+
+    /** Share staged files via system sheet — Founder can choose Drive. */
+    private void shareStaged() {
+        File dir = stagingDir();
+        File[] files = dir.listFiles((d, n) -> !n.equals("queue.json") && d.isDirectory() || (n != null && !n.equals("queue.json")));
+        ArrayList<Uri> uris = new ArrayList<>();
+        if (files != null) {
+            for (File f : files) {
+                if (!f.isFile()) continue;
+                try {
+                    Uri u = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", f);
+                    uris.add(u);
+                } catch (Exception e) {
+                    // fallback path
+                }
+            }
+        }
+        if (uris.isEmpty()) {
+            Toast.makeText(this, "No staged files to share", Toast.LENGTH_SHORT).show();
+            eval("onPermissionResult('No staged files')");
+            return;
+        }
+        Intent share = new Intent(uris.size() == 1 ? Intent.ACTION_SEND : Intent.ACTION_SEND_MULTIPLE);
+        share.setType("*/*");
+        if (uris.size() == 1) share.putExtra(Intent.EXTRA_STREAM, uris.get(0));
+        else share.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+        share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        share.putExtra(Intent.EXTRA_SUBJECT, "Cubit Assimilate backup");
+        startActivity(Intent.createChooser(share, "Send staged files to Drive / …"));
+        eval("onPermissionResult('Share sheet opened with " + uris.size() + " file(s)')");
     }
 
     public class Bridge {
@@ -191,18 +226,29 @@ public class MainActivity extends AppCompatActivity {
         public void startBackup(String scopes) {
             runOnUiThread(() -> {
                 String msg = "ok";
-                if (scopes != null && scopes.contains("photos")) msg = stageMedia(15);
+                if (scopes != null && scopes.contains("photos")) msg = stageMedia(25);
                 eval("onPermissionResult('" + msg.replace("'", "") + "')");
                 Intent svc = new Intent(MainActivity.this, UploadForegroundService.class);
                 svc.setAction(UploadForegroundService.ACTION_START);
                 if (Build.VERSION.SDK_INT >= 26) startForegroundService(svc);
                 else startService(svc);
-                boolean oauth = BuildConfig.OAUTH_WEB_CLIENT_ID != null && !BuildConfig.OAUTH_WEB_CLIENT_ID.isEmpty();
-                eval("onPermissionResult('Foreground upload service started')");
-                eval("onPermissionResult('OAuth client configured: " + oauth + "')");
-                if (!oauth) {
-                    eval("onPermissionResult('Complete Founder OAuth runbook to push queue to Drive')");
-                }
+                eval("onPermissionResult('Foreground service started')");
+            });
+        }
+
+        @JavascriptInterface
+        public void shareStaged(String ignored) {
+            runOnUiThread(() -> shareStaged());
+        }
+
+        @JavascriptInterface
+        public void clearStaging(String ignored) {
+            runOnUiThread(() -> {
+                File dir = stagingDir();
+                int n = 0;
+                File[] files = dir.listFiles();
+                if (files != null) for (File f : files) if (f.delete()) n++;
+                eval("onPermissionResult('Cleared " + n + " staged item(s)')");
             });
         }
 
@@ -214,9 +260,38 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void openAppSettings(String ignored) {
             runOnUiThread(() -> {
-                Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                 i.setData(Uri.parse("package:" + getPackageName()));
                 startActivity(i);
+            });
+        }
+
+        @JavascriptInterface
+        public void openBatterySettings(String ignored) {
+            runOnUiThread(() -> {
+                try {
+                    Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                    i.setData(Uri.parse("package:" + getPackageName()));
+                    startActivity(i);
+                } catch (Exception e) {
+                    startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void openUnknownSources(String ignored) {
+            runOnUiThread(() -> {
+                try {
+                    if (Build.VERSION.SDK_INT >= 26) {
+                        startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                Uri.parse("package:" + getPackageName())));
+                    } else {
+                        startActivity(new Intent(Settings.ACTION_SECURITY_SETTINGS));
+                    }
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, "Open settings manually for unknown apps", Toast.LENGTH_SHORT).show();
+                }
             });
         }
 
@@ -228,12 +303,13 @@ public class MainActivity extends AppCompatActivity {
                 o.put("oauth_configured", BuildConfig.OAUTH_WEB_CLIENT_ID != null && !BuildConfig.OAUTH_WEB_CLIENT_ID.isEmpty());
                 o.put("vault_folder", BuildConfig.DRIVE_VAULT_FOLDER_ID);
                 o.put("photos_folder", BuildConfig.DRIVE_PHOTOS_FOLDER_ID);
-                File dir = stagingDir();
-                File[] files = dir.listFiles((d, n) -> !n.equals("queue.json"));
+                File[] files = stagingDir().listFiles((d, n) -> !n.equals("queue.json"));
                 o.put("staged_count", files == null ? 0 : files.length);
                 o.put("media_images", ContextCompat.checkSelfPermission(MainActivity.this,
                         Build.VERSION.SDK_INT >= 33 ? Manifest.permission.READ_MEDIA_IMAGES : Manifest.permission.READ_EXTERNAL_STORAGE)
                         == PackageManager.PERMISSION_GRANTED);
+                PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+                o.put("ignoring_battery_optimizations", pm != null && pm.isIgnoringBatteryOptimizations(getPackageName()));
                 return o.toString();
             } catch (Exception e) {
                 return "{}";
@@ -247,25 +323,34 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQ_SAF && resultCode == RESULT_OK && data != null && data.getData() != null) {
             Uri tree = data.getData();
             final int takeFlags = data.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-            getContentResolver().takePersistableUriPermission(tree, takeFlags);
+            try {
+                getContentResolver().takePersistableUriPermission(tree, takeFlags);
+            } catch (Exception ignored) {}
             prefs.edit().putString("saf_tree", tree.toString()).apply();
             DocumentFile root = DocumentFile.fromTreeUri(this, tree);
             int copied = 0;
+            JSONArray list = new JSONArray();
             if (root != null) {
                 for (DocumentFile f : root.listFiles()) {
-                    if (!f.isFile() || copied >= 10) continue;
+                    if (!f.isFile() || copied >= 20) continue;
                     String name = f.getName() != null ? f.getName() : ("doc_" + copied);
+                    File out = new File(stagingDir(), System.currentTimeMillis() + "_" + name);
                     try (InputStream in = getContentResolver().openInputStream(f.getUri());
-                         OutputStream os = new FileOutputStream(new File(stagingDir(), name))) {
+                         OutputStream os = new FileOutputStream(out)) {
                         if (in == null) continue;
                         byte[] buf = new byte[8192];
                         int n;
                         while ((n = in.read(buf)) > 0) os.write(buf, 0, n);
                         copied++;
+                        JSONObject o = new JSONObject();
+                        o.put("name", out.getName());
+                        o.put("bytes", out.length());
+                        list.put(o);
                     } catch (Exception ignored) {}
                 }
             }
-            eval("onPermissionResult('SAF: staged " + copied + " file(s) from selected folder')");
+            try { writeQueueManifest(list, copied); } catch (Exception ignored) {}
+            eval("onPermissionResult('SAF: staged " + copied + " file(s)')");
         }
     }
 
@@ -273,7 +358,7 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQ_MEDIA) {
-            boolean ok = true;
+            boolean ok = grantResults.length > 0;
             for (int g : grantResults) if (g != PackageManager.PERMISSION_GRANTED) ok = false;
             eval("onPermissionResult('" + (ok ? "Permissions granted" : "Some permissions denied") + "')");
         }
