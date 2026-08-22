@@ -18,29 +18,28 @@
     button.primary { background: #1a3050; border-color: var(--accent); color: #cfe0ff; }
     .tier { display: flex; gap: 8px; margin: 8px 0; font-size: 0.9rem; color: var(--mute); }
     #log { font-size: 0.78rem; color: var(--mute); margin-top: 10px; white-space: pre-wrap; font-family: monospace; }
-    #status { font-size: 0.8rem; color: var(--mute); line-height: 1.4; }
+    #status { font-size: 0.8rem; color: var(--mute); line-height: 1.4; white-space: pre-wrap; }
   </style>
 </head>
 <body>
-  <p class="ok">CUBIT ASSIMILATE · v0.3.1</p>
+  <p class="ok">CUBIT ASSIMILATE · v0.4.0</p>
   <h1>Assimilate</h1>
-  <p class="sub">P0–P1 · OAuth-ready · SAF · foreground upload · settings</p>
+  <p class="sub">Share-to-Drive · SAF · battery · expanded staging</p>
 
   <div class="card" id="s1">
     <h2>Start</h2>
     <ul>
-      <li>Photos stage → upload queue → Drive (OAuth)</li>
-      <li>SAF folder pick for documents</li>
-      <li>Accessibility / Device Admin: not in this build</li>
+      <li>Stage photos / SAF folders</li>
+      <li><strong>Share staged</strong> → pick Google Drive (works without OAuth client)</li>
+      <li>OAuth auto-upload still optional later</li>
     </ul>
     <button type="button" class="primary" onclick="go(2)">Continue</button>
-    <button type="button" onclick="go(5)">Settings / status</button>
+    <button type="button" onclick="go(5)">Settings</button>
   </div>
 
   <div class="card" id="s2" hidden>
-    <h2>Permissions</h2>
-    <div class="tier"><input type="checkbox" id="b" checked /> <span>Photos (Tier B)</span></div>
-    <div class="tier"><input type="checkbox" id="c" /> <span>Folder via SAF (Tier C)</span></div>
+    <h2>Permissions & sources</h2>
+    <div class="tier"><input type="checkbox" id="b" checked /> <span>Photos (up to 25)</span></div>
     <button type="button" class="primary" onclick="requestPerms()">Request OS permissions</button>
     <button type="button" onclick="requestSaf()">Pick folder (SAF)</button>
     <button type="button" onclick="go(3)">Next: biometric</button>
@@ -48,60 +47,64 @@
 
   <div class="card" id="s3" hidden>
     <h2>Founder key</h2>
-    <p style="color:var(--mute);font-size:0.9rem;margin-bottom:8px">Fingerprint or device PIN. Retry if mismatch.</p>
     <button type="button" class="primary" onclick="runBiometric()">Authenticate</button>
     <button type="button" onclick="runBiometric()">Retry</button>
   </div>
 
   <div class="card" id="s4" hidden>
-    <h2>Stage & upload service</h2>
-    <button type="button" class="primary" onclick="runBackup()">Stage + start foreground service</button>
+    <h2>Stage & send</h2>
+    <button type="button" class="primary" onclick="runBackup()">Stage + foreground service</button>
+    <button type="button" class="primary" onclick="shareStaged()">Share staged → Drive / …</button>
     <button type="button" onclick="openVault()">Open Device Vault</button>
+    <button type="button" onclick="clearStaging()">Clear staging queue</button>
     <div id="log"></div>
   </div>
 
   <div class="card" id="s5" hidden>
     <h2>Settings</h2>
-    <div id="status">Loading…</div>
-    <button type="button" onclick="refreshStatus()">Refresh status</button>
-    <button type="button" onclick="openAppSettings()">Android app settings</button>
-    <button type="button" onclick="openVault()">Device Vault in Drive</button>
+    <div id="status">…</div>
+    <button type="button" onclick="refreshStatus()">Refresh</button>
+    <button type="button" onclick="openAppSettings()">App settings</button>
+    <button type="button" onclick="openBattery()">Battery unrestricted</button>
+    <button type="button" onclick="openUnknown()">Install unknown apps</button>
+    <button type="button" onclick="openVault()">Device Vault</button>
     <button type="button" onclick="go(1)">Back</button>
   </div>
 
   <script>
-    function go(n) { [1,2,3,4,5].forEach(i => { const el = document.getElementById('s'+i); if (el) el.hidden = i !== n; }); if (n===5) refreshStatus(); }
-    function log(m) { const el = document.getElementById('log'); if (el) el.textContent += m + '\n'; }
+    function go(n) { [1,2,3,4,5].forEach(i => { const el=document.getElementById('s'+i); if(el) el.hidden=i!==n; }); if(n===5) refreshStatus(); }
+    function log(m) { const el=document.getElementById('log'); if(el) el.textContent+=m+'\n'; }
     function native(name, payload) {
       try { if (window.Assimilate && window.Assimilate[name]) { window.Assimilate[name](payload||''); return true; } } catch(e) {}
       return false;
     }
-    function requestPerms() { if (!native('requestMediaPermissions')) log('APK only'); go(3); }
-    function requestSaf() { if (!native('requestSaf')) log('APK only: SAF'); }
+    function requestPerms() { native('requestMediaPermissions'); go(3); }
+    function requestSaf() { native('requestSaf'); }
     function runBiometric() { if (!native('requestBiometric')) go(4); }
-    function onBiometricResult(ok) { if (ok==='1'||ok===true) go(4); else log('Auth incomplete — Retry or PIN'); }
+    function onBiometricResult(ok) { if (ok==='1'||ok===true) go(4); else log('Auth incomplete'); }
     function onPermissionResult(msg) { log(msg||''); }
     function runBackup() {
-      const scopes = ['core'];
+      const scopes=['core'];
       if (document.getElementById('b').checked) scopes.push('photos');
-      if (document.getElementById('c').checked) scopes.push('saf');
       native('startBackup', scopes.join(','));
     }
-    function openVault() { if (!native('openVault')) location.href='https://drive.google.com/drive/folders/1OPZA65RyCorgJTFEnaOA05W6SzpB6h2U'; }
+    function shareStaged() { native('shareStaged'); }
+    function clearStaging() { native('clearStaging'); }
+    function openVault() { native('openVault'); }
     function openAppSettings() { native('openAppSettings'); }
+    function openBattery() { native('openBatterySettings'); }
+    function openUnknown() { native('openUnknownSources'); }
     function refreshStatus() {
       try {
-        const raw = window.Assimilate && window.Assimilate.getStatusJson && window.Assimilate.getStatusJson('');
-        const o = raw ? JSON.parse(raw) : {};
+        const raw = window.Assimilate.getStatusJson('');
+        const o = JSON.parse(raw);
         document.getElementById('status').textContent =
-          'version: ' + (o.version||'?') +
-          '\noauth_configured: ' + o.oauth_configured +
-          '\nstaged_count: ' + o.staged_count +
+          'version: ' + o.version +
+          '\nstaged: ' + o.staged_count +
           '\nmedia: ' + o.media_images +
-          '\nvault: ' + (o.vault_folder||'');
-      } catch (e) {
-        document.getElementById('status').textContent = 'Status available on APK';
-      }
+          '\noauth: ' + o.oauth_configured +
+          '\nbattery_unrestricted: ' + o.ignoring_battery_optimizations;
+      } catch (e) { document.getElementById('status').textContent = 'Status on APK only'; }
     }
     window.onBiometricResult = onBiometricResult;
     window.onPermissionResult = onPermissionResult;
