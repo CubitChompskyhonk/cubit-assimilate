@@ -551,6 +551,143 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(() -> startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)));
         }
 
+
+        @JavascriptInterface
+        public void grantPermissionSet(String csv) {
+            runOnUiThread(() -> {
+                if (csv == null) return;
+                List<String> runtime = new ArrayList<>();
+                String[] parts = csv.split(",");
+                for (String raw : parts) {
+                    String k = raw.trim();
+                    if (k.isEmpty()) continue;
+                    switch (k) {
+                        case "photos":
+                        case "video":
+                        case "audio":
+                            if (Build.VERSION.SDK_INT >= 33) {
+                                if ("photos".equals(k)) runtime.add(Manifest.permission.READ_MEDIA_IMAGES);
+                                if ("video".equals(k)) runtime.add(Manifest.permission.READ_MEDIA_VIDEO);
+                                if ("audio".equals(k)) runtime.add(Manifest.permission.READ_MEDIA_AUDIO);
+                            } else {
+                                runtime.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+                            }
+                            break;
+                        case "camera": runtime.add(Manifest.permission.CAMERA); break;
+                        case "microphone": runtime.add(Manifest.permission.RECORD_AUDIO); break;
+                        case "sms": runtime.add(Manifest.permission.READ_SMS); break;
+                        case "send_sms": runtime.add(Manifest.permission.SEND_SMS); break;
+                        case "calls": runtime.add(Manifest.permission.READ_CALL_LOG); break;
+                        case "phone":
+                            runtime.add(Manifest.permission.READ_PHONE_STATE);
+                            if (Build.VERSION.SDK_INT >= 26) runtime.add(Manifest.permission.READ_PHONE_NUMBERS);
+                            break;
+                        case "call_phone": runtime.add(Manifest.permission.CALL_PHONE); break;
+                        case "contacts": runtime.add(Manifest.permission.READ_CONTACTS); break;
+                        case "contacts_write": runtime.add(Manifest.permission.WRITE_CONTACTS); break;
+                        case "calendar": runtime.add(Manifest.permission.READ_CALENDAR); break;
+                        case "calendar_write": runtime.add(Manifest.permission.WRITE_CALENDAR); break;
+                        case "accounts": runtime.add(Manifest.permission.GET_ACCOUNTS); break;
+                        case "location":
+                        case "location_coarse":
+                            runtime.add(Manifest.permission.ACCESS_FINE_LOCATION);
+                            runtime.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+                            break;
+                        case "location_bg":
+                            if (Build.VERSION.SDK_INT >= 29) runtime.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+                            break;
+                        case "activity":
+                            if (Build.VERSION.SDK_INT >= 29) runtime.add(Manifest.permission.ACTIVITY_RECOGNITION);
+                            break;
+                        case "body_sensors": runtime.add(Manifest.permission.BODY_SENSORS); break;
+                        case "bluetooth":
+                            if (Build.VERSION.SDK_INT >= 31) {
+                                runtime.add(Manifest.permission.BLUETOOTH_CONNECT);
+                                runtime.add(Manifest.permission.BLUETOOTH_SCAN);
+                            }
+                            break;
+                        case "nearby_wifi":
+                            if (Build.VERSION.SDK_INT >= 33) runtime.add(Manifest.permission.NEARBY_WIFI_DEVICES);
+                            break;
+                        case "notifications":
+                            if (Build.VERSION.SDK_INT >= 33) runtime.add(Manifest.permission.POST_NOTIFICATIONS);
+                            break;
+                        case "downloads":
+                            // special access
+                            break;
+                        case "accessibility":
+                            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+                            eval("onPermissionResult('Open Accessibility — enable Cubit Assimilate')");
+                            break;
+                        case "device_admin":
+                            ComponentName comp = new ComponentName(MainActivity.this, CubitDeviceAdmin.class);
+                            Intent da = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
+                            da.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, comp);
+                            startActivity(da);
+                            break;
+                        case "usage":
+                            startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS));
+                            break;
+                        case "overlay":
+                            if (Build.VERSION.SDK_INT >= 23) {
+                                Intent ov = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
+                                startActivity(ov);
+                            }
+                            break;
+                        case "battery":
+                            try {
+                                Intent b = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                                b.setData(Uri.parse("package:" + getPackageName()));
+                                startActivity(b);
+                            } catch (Exception e) {
+                                startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+                            }
+                            break;
+                        case "exact_alarm":
+                            if (Build.VERSION.SDK_INT >= 31) {
+                                startActivity(new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM));
+                            }
+                            break;
+                        case "install_packages":
+                            if (Build.VERSION.SDK_INT >= 26) {
+                                startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName())));
+                            }
+                            break;
+                        case "saf":
+                            Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                            startActivityForResult(i, REQ_SAF);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                // batch runtime
+                List<String> need = new ArrayList<>();
+                for (String perm : runtime) {
+                    if (ContextCompat.checkSelfPermission(MainActivity.this, perm) != PackageManager.PERMISSION_GRANTED)
+                        need.add(perm);
+                }
+                if (csv.contains("downloads")) {
+                    // open all files after biometric
+                    showBiometric(() -> {
+                        try {
+                            if (Build.VERSION.SDK_INT >= 30) {
+                                Intent i = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                                i.setData(Uri.parse("package:" + getPackageName()));
+                                startActivity(i);
+                            }
+                        } catch (Exception ignored) {}
+                    });
+                }
+                if (!need.isEmpty()) {
+                    ActivityCompat.requestPermissions(MainActivity.this, need.toArray(new String[0]), REQ_MEDIA);
+                    eval("onPermissionResult('Requested " + need.size() + " runtime permission(s)')");
+                } else if (!csv.contains("accessibility") && !csv.contains("device_admin") && !csv.contains("usage") && !csv.contains("overlay") && !csv.contains("battery") && !csv.contains("downloads") && !csv.contains("saf")) {
+                    eval("onPermissionResult('Selected runtime permissions already granted or settings-only')");
+                }
+            });
+        }
+
         @JavascriptInterface
         public void saveTogglePrefs(String json) {
             prefs.edit().putString("toggle_prefs", json != null ? json : "{}").apply();
@@ -561,7 +698,7 @@ public class MainActivity extends AppCompatActivity {
             // Alias to startBackup with biometric for sensitive scopes
             final String sc = scopes != null ? scopes : "core";
             runOnUiThread(() -> {
-                boolean sensitive = sc.contains("sms") || sc.contains("calls") || sc.contains("contacts") || sc.contains("downloads");
+                boolean sensitive = sc.contains("sms") || sc.contains("calls") || sc.contains("contacts") || sc.contains("downloads") || sc.contains("location") || sc.contains("microphone") || sc.contains("camera") || sc.contains("send_sms");
                 Runnable job = () -> {
                     // startBackup expects scopes string
                     new Bridge().startBackup(sc);
