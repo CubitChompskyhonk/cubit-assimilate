@@ -163,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
     /** Share staged files via system sheet — Founder can choose Drive. */
     private void shareStaged() {
         File dir = stagingDir();
-        File[] files = dir.listFiles((d, n) -> !n.equals("queue.json") && d.isDirectory() || (n != null && !n.equals("queue.json")));
+        File[] files = dir.listFiles((d, n) -> n != null && !n.equals("queue.json"));
         ArrayList<Uri> uris = new ArrayList<>();
         if (files != null) {
             for (File f : files) {
