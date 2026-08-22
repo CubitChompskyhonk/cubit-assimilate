@@ -5,120 +5,207 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Cubit Assimilate</title>
   <style>
-    :root { --bg:#0a0c10; --card:#141a24; --line:#2a3142; --text:#eef1f6; --mute:#8b93a7; --ok:#3dd68c; --accent:#5b8cff; --warn:#e8b44c; }
+    :root {
+      --bg: #0a0c10; --card: #141a24; --line: #2a3142; --text: #eef1f6;
+      --mute: #8b93a7; --ok: #3dd68c; --accent: #5b8cff; --warn: #e8b44c;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; padding: 20px 16px 40px; }
-    h1 { font-size: 1.2rem; }
-    .sub { color: var(--mute); font-size: 0.85rem; margin: 6px 0 14px; }
-    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
-    .card h2 { font-size: 0.92rem; margin-bottom: 8px; color: var(--accent); }
-    ul { padding-left: 1.1rem; color: var(--mute); font-size: 0.85rem; line-height: 1.45; }
-    .ok { color: var(--ok); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; }
-    button { width: 100%; margin-top: 7px; padding: 11px; border-radius: 10px; border: 1px solid var(--line); background: #1a2435; color: var(--text); font-weight: 600; font-size: 0.88rem; }
-    button.primary { background: #1a3050; border-color: var(--accent); color: #cfe0ff; }
-    .tier { display: flex; gap: 8px; margin: 6px 0; font-size: 0.85rem; color: var(--mute); }
-    #log, #status { font-size: 0.75rem; color: var(--mute); margin-top: 10px; white-space: pre-wrap; font-family: monospace; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100dvh; padding: 16px 14px 32px;
+    }
+    header { margin-bottom: 14px; }
+    .brand { color: var(--ok); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; }
+    h1 { font-size: 1.25rem; margin-top: 4px; }
+    .sub { color: var(--mute); font-size: 0.82rem; margin-top: 4px; line-height: 1.4; }
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 12px; padding: 12px 14px; margin-bottom: 12px;
+    }
+    .card h2 { font-size: 0.8rem; color: var(--accent); letter-spacing: 0.04em; margin-bottom: 10px; text-transform: uppercase; }
+    .row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; padding: 10px 0; border-bottom: 1px solid #1e2533;
+    }
+    .row:last-child { border-bottom: none; }
+    .row .meta { flex: 1; min-width: 0; }
+    .row .title { font-size: 0.92rem; font-weight: 600; }
+    .row .desc { font-size: 0.75rem; color: var(--mute); margin-top: 2px; }
+    /* toggle */
+    .sw {
+      position: relative; width: 48px; height: 28px; flex-shrink: 0;
+    }
+    .sw input { opacity: 0; width: 0; height: 0; }
+    .sw span {
+      position: absolute; inset: 0; background: #2a3142; border-radius: 999px;
+      transition: 0.15s; cursor: pointer;
+    }
+    .sw span:before {
+      content: ""; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px;
+      background: #cfd6e6; border-radius: 50%; transition: 0.15s;
+    }
+    .sw input:checked + span { background: #2a5080; }
+    .sw input:checked + span:before { transform: translateX(20px); background: #9ec0ff; }
+    .sw input:disabled + span { opacity: 0.45; }
+    button {
+      width: 100%; margin-top: 8px; padding: 14px; border-radius: 12px;
+      border: 1px solid var(--line); background: #1a2435; color: var(--text);
+      font-weight: 700; font-size: 0.95rem;
+    }
+    button.primary {
+      background: linear-gradient(180deg, #1e3a5f, #152538);
+      border-color: var(--accent); color: #d6e6ff;
+    }
+    button.ghost { font-weight: 600; font-size: 0.85rem; padding: 10px; }
+    #log {
+      margin-top: 10px; font-family: ui-monospace, monospace; font-size: 0.72rem;
+      color: var(--mute); white-space: pre-wrap; max-height: 28dvh; overflow: auto;
+    }
+    .idline { font-size: 0.72rem; color: var(--mute); margin-top: 8px; word-break: break-all; }
+    .pill {
+      display: inline-block; font-size: 0.65rem; padding: 2px 6px; border-radius: 999px;
+      border: 1px solid var(--line); color: var(--mute); margin-left: 4px;
+    }
+    .pill.on { color: var(--ok); border-color: #2a5a40; }
   </style>
 </head>
 <body>
-  <p class="ok">CUBIT ASSIMILATE · v0.7.0</p>
-  <h1>Grok connection</h1>
-  <p class="sub">Vault bus · status.json · pending.json · Founder executes</p>
+  <header>
+    <div class="brand">CUBIT ASSIMILATE · v1.0.0</div>
+    <h1>Device assimilation</h1>
+    <p class="sub">Self-contained. Your toggles only. Data stays in this install’s vault path — no other users.</p>
+  </header>
 
-  <div class="card" id="s1">
-    <h2>Start</h2>
-    <ul>
-      <li><strong>Push status</strong> → writes status.json for Grok</li>
-      <li><strong>Run pending</strong> → executes connection/pending commands (biometric)</li>
-      <li>Share files into Drive <em>connection</em> folder</li>
-    </ul>
-    <button type="button" class="primary" onclick="go(6)">Connection</button>
-    <button type="button" onclick="go(2)">Scopes / stage</button>
-    <button type="button" onclick="go(5)">Settings</button>
+  <div class="card">
+    <h2>Permissions</h2>
+    <div class="row">
+      <div class="meta"><div class="title">Photos</div><div class="desc">Recent images</div></div>
+      <label class="sw"><input type="checkbox" id="p_photos" checked /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Video</div><div class="desc">Recent videos</div></div>
+      <label class="sw"><input type="checkbox" id="p_video" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Audio</div><div class="desc">Device audio library</div></div>
+      <label class="sw"><input type="checkbox" id="p_audio" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Downloads</div><div class="desc">Requires All files access</div></div>
+      <label class="sw"><input type="checkbox" id="p_downloads" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">SMS</div><div class="desc">Export messages (sensitive)</div></div>
+      <label class="sw"><input type="checkbox" id="p_sms" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Call log</div><div class="desc">Export recent calls</div></div>
+      <label class="sw"><input type="checkbox" id="p_calls" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Contacts</div><div class="desc">Name & number export</div></div>
+      <label class="sw"><input type="checkbox" id="p_contacts" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Installed apps</div><div class="desc">Package inventory</div></div>
+      <label class="sw"><input type="checkbox" id="p_packages" checked /><span></span></label>
+    </div>
   </div>
 
-  <div class="card" id="s6" hidden>
-    <h2>Connection bus</h2>
-    <button type="button" class="primary" onclick="pushStatus()">Write status.json</button>
-    <button type="button" class="primary" onclick="runPending()">Run pending.json (biometric)</button>
-    <button type="button" onclick="shareStaged()">Share staging → Drive</button>
-    <button type="button" onclick="openConn()">Open connection folder</button>
-    <button type="button" onclick="openVault()">Device Vault</button>
+  <div class="card">
+    <h2>System gates</h2>
+    <div class="row">
+      <div class="meta"><div class="title">Request media OS permission</div><div class="desc">Photos / video / audio dialogs</div></div>
+      <button class="ghost" style="width:auto;padding:8px 12px;margin:0" type="button" onclick="requestMedia()">Grant</button>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Held scopes</div><div class="desc">SMS / calls / contacts — biometric</div></div>
+      <button class="ghost" style="width:auto;padding:8px 12px;margin:0" type="button" onclick="requestHeld()">Grant</button>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">All files access</div><div class="desc">For Downloads toggle</div></div>
+      <button class="ghost" style="width:auto;padding:8px 12px;margin:0" type="button" onclick="requestAllFiles()">Open</button>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Folder (SAF)</div><div class="desc">Optional extra tree</div></div>
+      <button class="ghost" style="width:auto;padding:8px 12px;margin:0" type="button" onclick="requestSaf()">Pick</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>This install</h2>
+    <div class="idline" id="installId">install_id: …</div>
+    <div class="idline" id="statusLine">status: idle</div>
+    <button type="button" class="primary" id="runBtn" onclick="runAssimilation()">Run assimilation</button>
+    <button type="button" onclick="pushStatus()">Write status.json</button>
+    <button type="button" onclick="shareStaged()">Share results</button>
+    <button type="button" onclick="clearStaging()">Clear local queue</button>
     <div id="log"></div>
-    <button type="button" onclick="go(1)">Back</button>
-  </div>
-
-  <div class="card" id="s2" hidden>
-    <h2>Scopes</h2>
-    <div class="tier"><input type="checkbox" id="b" checked /> <span>Photos</span></div>
-    <div class="tier"><input type="checkbox" id="packages" checked /> <span>Packages</span></div>
-    <div class="tier"><input type="checkbox" id="sms" /> <span>SMS</span></div>
-    <div class="tier"><input type="checkbox" id="v" /> <span>Video</span></div>
-    <div class="tier"><input type="checkbox" id="a" /> <span>Audio</span></div>
-    <div class="tier"><input type="checkbox" id="d" /> <span>Downloads</span></div>
-    <div class="tier"><input type="checkbox" id="calls" /> <span>Calls</span></div>
-    <div class="tier"><input type="checkbox" id="contacts" /> <span>Contacts</span></div>
-    <button type="button" class="primary" onclick="requestPerms()">Media permissions</button>
-    <button type="button" onclick="requestHeld()">Held permissions</button>
-    <button type="button" onclick="requestSaf()">SAF</button>
-    <button type="button" onclick="requestAllFiles()">All files</button>
-    <button type="button" onclick="go(3)">Biometric</button>
-  </div>
-
-  <div class="card" id="s3" hidden>
-    <button type="button" class="primary" onclick="runBiometric()">Authenticate</button>
-  </div>
-
-  <div class="card" id="s4" hidden>
-    <button type="button" class="primary" onclick="runBackup()">Stage selected</button>
-    <button type="button" onclick="shareStaged()">Share staged</button>
-    <button type="button" onclick="clearStaging()">Clear</button>
-    <button type="button" onclick="go(6)">Connection</button>
-  </div>
-
-  <div class="card" id="s5" hidden>
-    <div id="status"></div>
-    <button type="button" onclick="refreshStatus()">Refresh</button>
-    <button type="button" onclick="openAppSettings()">App settings</button>
-    <button type="button" onclick="go(1)">Back</button>
   </div>
 
   <script>
-    function go(n){ [1,2,3,4,5,6].forEach(i=>{const e=document.getElementById('s'+i);if(e)e.hidden=i!==n;}); if(n===5)refreshStatus(); }
-    function log(m){ const e=document.getElementById('log'); if(e)e.textContent+=m+'\n'; }
+    const KEYS = ['photos','video','audio','downloads','sms','calls','contacts','packages'];
     function native(n,p){ try{ if(window.Assimilate&&window.Assimilate[n]){ window.Assimilate[n](p||''); return true;} }catch(e){} return false; }
-    function requestPerms(){ native('requestMediaPermissions'); }
+    function log(m){ const e=document.getElementById('log'); e.textContent += m + '\n'; e.scrollTop = e.scrollHeight; }
+    function loadPrefs(){
+      try{
+        const raw = localStorage.getItem('assim_toggles');
+        if(!raw) return;
+        const o = JSON.parse(raw);
+        KEYS.forEach(k => {
+          const el = document.getElementById('p_'+k);
+          if(el && typeof o[k] === 'boolean') el.checked = o[k];
+        });
+      }catch(e){}
+    }
+    function savePrefs(){
+      const o = {};
+      KEYS.forEach(k => { o[k] = !!document.getElementById('p_'+k).checked; });
+      localStorage.setItem('assim_toggles', JSON.stringify(o));
+      native('saveTogglePrefs', JSON.stringify(o));
+    }
+    KEYS.forEach(k => {
+      const el = document.getElementById('p_'+k);
+      if(el) el.addEventListener('change', savePrefs);
+    });
+    function requestMedia(){ native('requestMediaPermissions'); }
     function requestHeld(){ native('requestHeldPermissions'); }
-    function requestSaf(){ native('requestSaf'); }
     function requestAllFiles(){ native('requestAllFilesAccess'); }
-    function runBiometric(){ if(!native('requestBiometric')) go(4); }
-    function onBiometricResult(ok){ if(ok==='1'||ok===true) go(4); else log('Auth incomplete'); }
-    function onPermissionResult(msg){ log(msg||''); }
-    function runBackup(){
-      const scopes=['core'];
-      if(document.getElementById('b').checked) scopes.push('photos');
-      if(document.getElementById('v').checked) scopes.push('video');
-      if(document.getElementById('a').checked) scopes.push('audio');
-      if(document.getElementById('d').checked) scopes.push('downloads');
-      if(document.getElementById('sms').checked) scopes.push('sms');
-      if(document.getElementById('calls').checked) scopes.push('calls');
-      if(document.getElementById('contacts').checked) scopes.push('contacts');
-      if(document.getElementById('packages').checked) scopes.push('packages');
-      native('startBackup', scopes.join(','));
+    function requestSaf(){ native('requestSaf'); }
+    function runAssimilation(){
+      savePrefs();
+      const scopes = ['core'];
+      KEYS.forEach(k => { if(document.getElementById('p_'+k).checked) scopes.push(k); });
+      document.getElementById('statusLine').textContent = 'status: running…';
+      log('Run assimilation → ' + scopes.join(', '));
+      native('runAssimilation', scopes.join(','));
     }
     function pushStatus(){ native('pushStatus'); }
-    function runPending(){ native('runPending'); }
     function shareStaged(){ native('shareStaged'); }
     function clearStaging(){ native('clearStaging'); }
-    function openVault(){ native('openVault'); }
-    function openConn(){ native('openConnectionFolder'); }
-    function openAppSettings(){ native('openAppSettings'); }
-    function refreshStatus(){
-      try{ document.getElementById('status').textContent = JSON.stringify(JSON.parse(window.Assimilate.getStatusJson('')), null, 2); }
-      catch(e){ document.getElementById('status').textContent='APK only'; }
+    function onPermissionResult(msg){
+      log(msg||'');
+      if(msg && msg.indexOf('Staged')>=0) document.getElementById('statusLine').textContent = 'status: staged — share when ready';
     }
-    window.onBiometricResult=onBiometricResult;
-    window.onPermissionResult=onPermissionResult;
+    function onBiometricResult(ok){
+      if(ok==='1'||ok===true) log('Biometric OK');
+      else log('Biometric cancelled');
+    }
+    function refreshInstall(){
+      try{
+        const o = JSON.parse(window.Assimilate.getStatusJson(''));
+        document.getElementById('installId').textContent =
+          'install_id: ' + (o.install_id||'…') + ' · v' + (o.version||'?');
+      }catch(e){
+        document.getElementById('installId').textContent = 'install_id: (open on APK)';
+      }
+    }
+    window.onPermissionResult = onPermissionResult;
+    window.onBiometricResult = onBiometricResult;
+    loadPrefs();
+    setTimeout(refreshInstall, 200);
+    setTimeout(refreshInstall, 800);
   </script>
 </body>
 </html>
