@@ -300,6 +300,77 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    
+    private String writeStatusToStaging() {
+        try {
+            String raw = new Bridge().getStatusJson("");
+            JSONObject o = new JSONObject(raw);
+            o.put("schema", 1);
+            o.put("device_label", "founder-android-01");
+            o.put("ts", System.currentTimeMillis());
+            o.put("message", "status from device");
+            File out = new File(stagingDir(), "status.json");
+            try (FileOutputStream fos = new FileOutputStream(out)) {
+                fos.write(o.toString(2).getBytes(StandardCharsets.UTF_8));
+            }
+            return "Wrote status.json (" + out.length() + " bytes) — Share to connection folder";
+        } catch (Exception e) {
+            return "status write error: " + e.getMessage();
+        }
+    }
+
+    private String runPendingFromStaging() {
+        File pending = new File(stagingDir(), "pending.json");
+        if (!pending.exists()) {
+            return "No pending.json in staging — download from Drive connection folder and share/copy into app, or place via SAF";
+        }
+        try {
+            byte[] data = new byte[(int) pending.length()];
+            try (FileInputStream in = new FileInputStream(pending)) { in.read(data); }
+            JSONObject doc = new JSONObject(new String(data, StandardCharsets.UTF_8));
+            String id = doc.optString("id", "unknown");
+            JSONArray actions = doc.optJSONArray("actions");
+            StringBuilder sb = new StringBuilder("ack " + id + ": ");
+            if (actions == null) return "pending.json has no actions";
+            for (int i = 0; i < actions.length(); i++) {
+                JSONObject a = actions.getJSONObject(i);
+                String type = a.optString("type", "");
+                if ("status_only".equals(type)) {
+                    sb.append(writeStatusToStaging()).append("; ");
+                } else if ("clear_staging".equals(type)) {
+                    File[] files = stagingDir().listFiles();
+                    int n = 0;
+                    if (files != null) for (File f : files) if (!f.getName().equals("pending.json") && f.delete()) n++;
+                    sb.append("cleared ").append(n).append("; ");
+                } else if ("stage".equals(type)) {
+                    JSONArray scopes = a.optJSONArray("scopes");
+                    StringBuilder sc = new StringBuilder("core");
+                    if (scopes != null) for (int j = 0; j < scopes.length(); j++) sc.append(',').append(scopes.getString(j));
+                    // reuse backup path via string scopes
+                    String scopeStr = sc.toString();
+                    if (scopeStr.contains("photos")) sb.append(stageCollection(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, new String[]{MediaStore.Images.Media._ID, MediaStore.Images.Media.DISPLAY_NAME}, MediaStore.Images.Media.DATE_ADDED + " DESC", 25, "photos")).append("; ");
+                    if (scopeStr.contains("packages")) sb.append(stageInstalledApps()).append("; ");
+                    if (scopeStr.contains("sms")) sb.append(stageSms(100)).append("; ");
+                } else {
+                    sb.append("skipped ").append(type).append("; ");
+                }
+            }
+            JSONObject ack = new JSONObject();
+            ack.put("schema", 1);
+            ack.put("last_id", id);
+            ack.put("result", sb.toString());
+            ack.put("ts", System.currentTimeMillis());
+            try (FileOutputStream fos = new FileOutputStream(new File(stagingDir(), "ack.json"))) {
+                fos.write(ack.toString(2).getBytes(StandardCharsets.UTF_8));
+            }
+            writeStatusToStaging();
+            return sb.toString();
+        } catch (Exception e) {
+            return "pending error: " + e.getMessage();
+        }
+    }
+
+
     private void shareStagedFiles() {
         File dir = stagingDir();
         File[] files = dir.listFiles((d, n) -> n != null && !n.equals("queue.json"));
@@ -477,6 +548,23 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void openUsageAccess(String ignored) {
             runOnUiThread(() -> startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)));
+        }
+
+        @JavascriptInterface
+        public void pushStatus(String ignored) {
+            runOnUiThread(() -> eval("onPermissionResult('" + writeStatusToStaging().replace("'", "") + "')"));
+        }
+
+        @JavascriptInterface
+        public void runPending(String ignored) {
+            runOnUiThread(() -> showBiometric(() ->
+                eval("onPermissionResult('" + runPendingFromStaging().replace("'", "").replace("\n", " ") + "')")));
+        }
+
+        @JavascriptInterface
+        public void openConnectionFolder(String ignored) {
+            runOnUiThread(() -> startActivity(new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("https://drive.google.com/drive/folders/1zPE1YjRzPJBKxr9bmUm1jD3g5idjVMIW"))));
         }
 
         @JavascriptInterface
