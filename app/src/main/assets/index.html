@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Cubit Assimilate</title>
   <style>
-    :root { --bg:#0a0c10; --card:#141a24; --line:#2a3142; --text:#eef1f6; --mute:#8b93a7; --ok:#3dd68c; --accent:#5b8cff; --bad:#e07070; }
+    :root { --bg:#0a0c10; --card:#141a24; --line:#2a3142; --text:#eef1f6; --mute:#8b93a7; --ok:#3dd68c; --accent:#5b8cff; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; padding: 20px 16px 40px; }
     h1 { font-size: 1.35rem; margin-bottom: 6px; }
@@ -14,7 +14,6 @@
     .card h2 { font-size: 0.95rem; margin-bottom: 8px; color: var(--accent); }
     ul { padding-left: 1.1rem; color: var(--mute); font-size: 0.9rem; line-height: 1.45; }
     .ok { color: var(--ok); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; }
-    .warn { color: #e8b44c; font-size: 0.85rem; margin-top: 10px; }
     button {
       width: 100%; margin-top: 8px; padding: 14px; border-radius: 10px; border: 1px solid var(--line);
       background: #1a2435; color: var(--text); font-weight: 600; font-size: 0.95rem;
@@ -25,91 +24,74 @@
   </style>
 </head>
 <body>
-  <p class="ok">CUBIT ASSIMILATE · v0.2.0 NATIVE</p>
+  <p class="ok">CUBIT ASSIMILATE · v0.2.1</p>
   <h1>Founder device assimilation</h1>
-  <p class="sub">Scoped backup · biometric gate · Drive vault</p>
+  <p class="sub">Scoped backup · biometric · staged upload queue</p>
 
   <div class="card" id="s1">
     <h2>1 · What this is</h2>
     <ul>
-      <li>Backs up <strong>what you enable</strong> to Head Offices Device Vault</li>
-      <li>Uses Android permission dialogs</li>
-      <li>No SMS / call log / messenger access in this version</li>
-      <li>No hidden device admin</li>
+      <li>Backup <strong>enabled scopes</strong> toward Drive Device Vault</li>
+      <li>OS permission dialogs only — no hidden access</li>
+      <li>If fingerprint fails, use <strong>device PIN/password</strong></li>
     </ul>
     <button type="button" class="primary" onclick="go(2)">Continue</button>
   </div>
 
   <div class="card" id="s2" hidden>
     <h2>2 · Scopes</h2>
-    <div class="tier"><input type="checkbox" checked disabled /> <span><strong>Core</strong> — network, biometric</span></div>
-    <div class="tier"><input type="checkbox" id="b" checked /> <span><strong>Photos & videos</strong> — Tier B</span></div>
-    <div class="tier"><input type="checkbox" id="c" /> <span><strong>Folders I select</strong> — Tier C (SAF)</span></div>
-    <div class="tier"><input type="checkbox" id="d" /> <span><strong>Broad all-files</strong> — Tier D (advanced)</span></div>
+    <div class="tier"><input type="checkbox" checked disabled /> <span><strong>Core</strong></span></div>
+    <div class="tier"><input type="checkbox" id="b" checked /> <span><strong>Photos</strong> — stage to upload queue</span></div>
+    <div class="tier"><input type="checkbox" id="c" /> <span><strong>Folders</strong> — SAF (later)</span></div>
     <button type="button" class="primary" onclick="requestPerms()">Request OS permissions</button>
     <button type="button" onclick="go(3)">Skip to biometric</button>
   </div>
 
   <div class="card" id="s3" hidden>
     <h2>3 · Founder key</h2>
-    <p style="color:var(--mute);font-size:0.9rem;line-height:1.45;margin-bottom:8px">Confirm biometrics before backup.</p>
-    <button type="button" class="primary" onclick="runBiometric()">Use biometrics</button>
+    <p style="color:var(--mute);font-size:0.9rem;line-height:1.45;margin-bottom:8px">
+      Fingerprint, face, or <strong>PIN/pattern/password</strong>. If the finger does not match, wait for the prompt to offer device credentials or tap Retry.
+    </p>
+    <button type="button" class="primary" onclick="runBiometric()">Authenticate</button>
+    <button type="button" onclick="runBiometric()">Retry biometric</button>
   </div>
 
   <div class="card" id="s4" hidden>
-    <h2>4 · Vault</h2>
-    <p style="color:var(--mute);font-size:0.9rem;margin-bottom:8px">Target: Device Vault / founder-android-01</p>
-    <button type="button" class="primary" onclick="runBackup()">Start backup</button>
+    <h2>4 · Stage & vault</h2>
+    <button type="button" class="primary" onclick="runBackup()">Stage photos (upload queue)</button>
+    <button type="button" onclick="openVault()">Open Device Vault in Drive</button>
     <div id="log"></div>
   </div>
 
   <script>
-    function go(n) {
-      [1,2,3,4].forEach(i => document.getElementById('s'+i).hidden = i !== n);
-    }
-    function log(m) {
-      document.getElementById('log').textContent += m + '\n';
-    }
+    function go(n) { [1,2,3,4].forEach(i => document.getElementById('s'+i).hidden = i !== n); }
+    function log(m) { document.getElementById('log').textContent += m + '\n'; }
     function native(name, payload) {
       try {
-        if (window.Assimilate && window.Assimilate[name]) {
-          window.Assimilate[name](payload || '');
-          return true;
-        }
+        if (window.Assimilate && window.Assimilate[name]) { window.Assimilate[name](payload || ''); return true; }
       } catch (e) {}
       return false;
     }
     function requestPerms() {
-      if (!native('requestMediaPermissions')) {
-        log('Web preview: OS permission dialogs only on APK.');
-      }
+      if (!native('requestMediaPermissions')) log('APK only: permission dialogs');
       go(3);
     }
     function runBiometric() {
-      if (!native('requestBiometric')) {
-        log('Web preview: BiometricPrompt only on APK — simulating OK.');
-        go(4);
-        return;
-      }
+      if (!native('requestBiometric')) { log('APK only: BiometricPrompt'); go(4); }
     }
     function onBiometricResult(ok) {
       if (ok === '1' || ok === true) go(4);
-      else log('Biometric failed or cancelled.');
+      else log('Auth not completed — Retry, or use PIN when the system offers it.');
     }
-    function onPermissionResult(msg) {
-      log(msg || 'Permission result received.');
-    }
+    function onPermissionResult(msg) { log(msg || ''); }
     function runBackup() {
       const scopes = ['core'];
       if (document.getElementById('b').checked) scopes.push('photos');
       if (document.getElementById('c').checked) scopes.push('saf');
-      if (document.getElementById('d').checked) scopes.push('all-files');
-      log('Scopes: ' + scopes.join(', '));
-      if (!native('startBackup', scopes.join(','))) {
-        log('Vault folder is live on Drive.');
-        log('Native upload module attaches Drive API next.');
-        log('Status: PERMISSIONS + BIOMETRIC PATH READY');
-      }
+      if (!native('startBackup', scopes.join(','))) log('Web shell cannot stage media');
+    }
+    function openVault() {
+      if (!native('openVault')) window.open('https://drive.google.com/drive/folders/1OPZA65RyCorgJTFEnaOA05W6SzpB6h2U', '_blank');
     }
     window.onBiometricResult = onBiometricResult;
     window.onPermissionResult = onPermissionResult;
