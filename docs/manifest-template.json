@@ -1,0 +1,8 @@
+{
+  "device_label": "founder-android-01",
+  "vault_folder_id": "1OPZA65RyCorgJTFEnaOA05W6SzpB6h2U",
+  "scopes_enabled": [],
+  "runs": [],
+  "schema_version": 1,
+  "notes": "Assimilate updates this on each native backup run. No secrets."
+}
