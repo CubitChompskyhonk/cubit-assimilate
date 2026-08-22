@@ -1,12 +1,11 @@
 # Assimilate Fix List
 
-## Open
-1. **Fingerprint did not match (Founder report)** — BiometricPrompt failed match; improve retry, device-credential fallback, and messaging so a bad read is not a dead end.
-2. Drive API OAuth client for automatic upload into `founder-android-01` (requires Google Cloud OAuth client ID under Founder account).
-3. SAF Tier C folder picker write path.
-4. Foreground service notification during long transfers.
+## Resolved
+1. **Fingerprint mismatch** — retry + PIN messaging (v0.2.1+)
+2. **Download showed v0.2.1** — root cause: release APK packaged stale `assets/index.html` while tag said 0.3.0.
+   - **Fix:** rebuild from main as **v0.3.1**, verify UI string inside APK before Founder link (`VERIFY_PASS`).
 
-## Done this cycle
-- Biometric retry + explicit PIN/pattern/password fallback messaging
-- MediaStore query + local staging folder after Tier B grant
-- Upload pipeline scaffold (pending queue + vault deep link)
+## Open
+1. Drive OAuth client ID under Founder Google Cloud (runbook ready)
+2. SAF polish / larger batch staging
+3. Real Drive multipart upload once OAuth configured
