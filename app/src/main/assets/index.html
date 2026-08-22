@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Cubit Assimilate</title>
   <style>
-    :root { --bg:#0a0c10; --card:#141a24; --line:#2a3142; --text:#eef1f6; --mute:#8b93a7; --ok:#3dd68c; --accent:#5b8cff; --warn:#e8b44c; --bad:#e07070; }
+    :root { --bg:#0a0c10; --card:#141a24; --line:#2a3142; --text:#eef1f6; --mute:#8b93a7; --ok:#3dd68c; --accent:#5b8cff; --warn:#e8b44c; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; padding: 20px 16px 40px; }
     h1 { font-size: 1.2rem; }
@@ -14,86 +14,83 @@
     .card h2 { font-size: 0.92rem; margin-bottom: 8px; color: var(--accent); }
     ul { padding-left: 1.1rem; color: var(--mute); font-size: 0.85rem; line-height: 1.45; }
     .ok { color: var(--ok); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; }
-    .warn { color: var(--warn); font-size: 0.78rem; margin-top: 8px; }
     button { width: 100%; margin-top: 7px; padding: 11px; border-radius: 10px; border: 1px solid var(--line); background: #1a2435; color: var(--text); font-weight: 600; font-size: 0.88rem; }
     button.primary { background: #1a3050; border-color: var(--accent); color: #cfe0ff; }
-    button.danger { border-color: #603040; }
     .tier { display: flex; gap: 8px; margin: 6px 0; font-size: 0.85rem; color: var(--mute); }
     #log, #status { font-size: 0.75rem; color: var(--mute); margin-top: 10px; white-space: pre-wrap; font-family: monospace; }
   </style>
 </head>
 <body>
-  <p class="ok">CUBIT ASSIMILATE · v0.6.0</p>
-  <h1>Near-full assimilation</h1>
-  <p class="sub">Held scopes unlocked under Founder biometric + system dialogs</p>
+  <p class="ok">CUBIT ASSIMILATE · v0.7.0</p>
+  <h1>Grok connection</h1>
+  <p class="sub">Vault bus · status.json · pending.json · Founder executes</p>
 
   <div class="card" id="s1">
     <h2>Start</h2>
     <ul>
-      <li>Media + Downloads + SAF (prior)</li>
-      <li><strong>New:</strong> SMS, call log, contacts, app list</li>
-      <li><strong>New:</strong> Accessibility (window pkg only), Device Admin (lock)</li>
-      <li>No keylogging · no silent cloud SMS · share sheet to Drive</li>
+      <li><strong>Push status</strong> → writes status.json for Grok</li>
+      <li><strong>Run pending</strong> → executes connection/pending commands (biometric)</li>
+      <li>Share files into Drive <em>connection</em> folder</li>
     </ul>
-    <button type="button" class="primary" onclick="go(2)">Continue</button>
+    <button type="button" class="primary" onclick="go(6)">Connection</button>
+    <button type="button" onclick="go(2)">Scopes / stage</button>
     <button type="button" onclick="go(5)">Settings</button>
+  </div>
+
+  <div class="card" id="s6" hidden>
+    <h2>Connection bus</h2>
+    <button type="button" class="primary" onclick="pushStatus()">Write status.json</button>
+    <button type="button" class="primary" onclick="runPending()">Run pending.json (biometric)</button>
+    <button type="button" onclick="shareStaged()">Share staging → Drive</button>
+    <button type="button" onclick="openConn()">Open connection folder</button>
+    <button type="button" onclick="openVault()">Device Vault</button>
+    <div id="log"></div>
+    <button type="button" onclick="go(1)">Back</button>
   </div>
 
   <div class="card" id="s2" hidden>
     <h2>Scopes</h2>
     <div class="tier"><input type="checkbox" id="b" checked /> <span>Photos</span></div>
+    <div class="tier"><input type="checkbox" id="packages" checked /> <span>Packages</span></div>
+    <div class="tier"><input type="checkbox" id="sms" /> <span>SMS</span></div>
     <div class="tier"><input type="checkbox" id="v" /> <span>Video</span></div>
     <div class="tier"><input type="checkbox" id="a" /> <span>Audio</span></div>
-    <div class="tier"><input type="checkbox" id="d" /> <span>Downloads (all-files)</span></div>
-    <div class="tier"><input type="checkbox" id="sms" /> <span>SMS export</span></div>
-    <div class="tier"><input type="checkbox" id="calls" /> <span>Call log</span></div>
+    <div class="tier"><input type="checkbox" id="d" /> <span>Downloads</span></div>
+    <div class="tier"><input type="checkbox" id="calls" /> <span>Calls</span></div>
     <div class="tier"><input type="checkbox" id="contacts" /> <span>Contacts</span></div>
-    <div class="tier"><input type="checkbox" id="packages" checked /> <span>Installed apps list</span></div>
     <button type="button" class="primary" onclick="requestPerms()">Media permissions</button>
-    <button type="button" class="danger" onclick="requestHeld()">Held: SMS / calls / contacts (biometric)</button>
-    <button type="button" onclick="requestSaf()">SAF folder</button>
-    <button type="button" onclick="requestAllFiles()">All files access</button>
-    <button type="button" onclick="openA11y()">Accessibility settings</button>
-    <button type="button" onclick="openAdmin()">Device admin (lock)</button>
-    <button type="button" onclick="openUsage()">Usage access settings</button>
-    <p class="warn">Each held scope needs system approval. Exports stay on-device until you Share.</p>
-    <button type="button" onclick="go(3)">Next</button>
+    <button type="button" onclick="requestHeld()">Held permissions</button>
+    <button type="button" onclick="requestSaf()">SAF</button>
+    <button type="button" onclick="requestAllFiles()">All files</button>
+    <button type="button" onclick="go(3)">Biometric</button>
   </div>
 
   <div class="card" id="s3" hidden>
-    <h2>Founder key</h2>
     <button type="button" class="primary" onclick="runBiometric()">Authenticate</button>
   </div>
 
   <div class="card" id="s4" hidden>
-    <h2>Stage & send</h2>
     <button type="button" class="primary" onclick="runBackup()">Stage selected</button>
-    <button type="button" class="primary" onclick="shareStaged()">Share staged → Drive</button>
-    <button type="button" onclick="clearStaging()">Clear queue</button>
-    <button type="button" onclick="openVault()">Device Vault</button>
-    <div id="log"></div>
+    <button type="button" onclick="shareStaged()">Share staged</button>
+    <button type="button" onclick="clearStaging()">Clear</button>
+    <button type="button" onclick="go(6)">Connection</button>
   </div>
 
   <div class="card" id="s5" hidden>
-    <h2>Status</h2>
     <div id="status"></div>
     <button type="button" onclick="refreshStatus()">Refresh</button>
     <button type="button" onclick="openAppSettings()">App settings</button>
-    <button type="button" onclick="openBattery()">Battery</button>
     <button type="button" onclick="go(1)">Back</button>
   </div>
 
   <script>
-    function go(n){ [1,2,3,4,5].forEach(i=>{const e=document.getElementById('s'+i);if(e)e.hidden=i!==n;}); if(n===5)refreshStatus(); }
+    function go(n){ [1,2,3,4,5,6].forEach(i=>{const e=document.getElementById('s'+i);if(e)e.hidden=i!==n;}); if(n===5)refreshStatus(); }
     function log(m){ const e=document.getElementById('log'); if(e)e.textContent+=m+'\n'; }
     function native(n,p){ try{ if(window.Assimilate&&window.Assimilate[n]){ window.Assimilate[n](p||''); return true;} }catch(e){} return false; }
     function requestPerms(){ native('requestMediaPermissions'); }
     function requestHeld(){ native('requestHeldPermissions'); }
     function requestSaf(){ native('requestSaf'); }
     function requestAllFiles(){ native('requestAllFilesAccess'); }
-    function openA11y(){ native('openAccessibilitySettings'); }
-    function openAdmin(){ native('openDeviceAdmin'); }
-    function openUsage(){ native('openUsageAccess'); }
     function runBiometric(){ if(!native('requestBiometric')) go(4); }
     function onBiometricResult(ok){ if(ok==='1'||ok===true) go(4); else log('Auth incomplete'); }
     function onPermissionResult(msg){ log(msg||''); }
@@ -109,16 +106,16 @@
       if(document.getElementById('packages').checked) scopes.push('packages');
       native('startBackup', scopes.join(','));
     }
+    function pushStatus(){ native('pushStatus'); }
+    function runPending(){ native('runPending'); }
     function shareStaged(){ native('shareStaged'); }
     function clearStaging(){ native('clearStaging'); }
     function openVault(){ native('openVault'); }
+    function openConn(){ native('openConnectionFolder'); }
     function openAppSettings(){ native('openAppSettings'); }
-    function openBattery(){ native('openBatterySettings'); }
     function refreshStatus(){
-      try{
-        const o=JSON.parse(window.Assimilate.getStatusJson(''));
-        document.getElementById('status').textContent = JSON.stringify(o, null, 2);
-      }catch(e){ document.getElementById('status').textContent='APK only'; }
+      try{ document.getElementById('status').textContent = JSON.stringify(JSON.parse(window.Assimilate.getStatusJson('')), null, 2); }
+      catch(e){ document.getElementById('status').textContent='APK only'; }
     }
     window.onBiometricResult=onBiometricResult;
     window.onPermissionResult=onPermissionResult;
