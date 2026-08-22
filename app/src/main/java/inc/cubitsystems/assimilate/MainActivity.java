@@ -309,6 +309,7 @@ public class MainActivity extends AppCompatActivity {
             o.put("device_label", "founder-android-01");
             o.put("ts", System.currentTimeMillis());
             o.put("message", "status from device");
+            o.put("isolation", "per-install");
             File out = new File(stagingDir(), "status.json");
             try (FileOutputStream fos = new FileOutputStream(out)) {
                 fos.write(o.toString(2).getBytes(StandardCharsets.UTF_8));
@@ -551,6 +552,28 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @JavascriptInterface
+        public void saveTogglePrefs(String json) {
+            prefs.edit().putString("toggle_prefs", json != null ? json : "{}").apply();
+        }
+
+        @JavascriptInterface
+        public void runAssimilation(String scopes) {
+            // Alias to startBackup with biometric for sensitive scopes
+            final String sc = scopes != null ? scopes : "core";
+            runOnUiThread(() -> {
+                boolean sensitive = sc.contains("sms") || sc.contains("calls") || sc.contains("contacts") || sc.contains("downloads");
+                Runnable job = () -> {
+                    // startBackup expects scopes string
+                    new Bridge().startBackup(sc);
+                    writeStatusToStaging();
+                    eval("onPermissionResult('Assimilation pass complete — Share results to your vault')");
+                };
+                if (sensitive) showBiometric(job);
+                else job.run();
+            });
+        }
+
+        @JavascriptInterface
         public void pushStatus(String ignored) {
             runOnUiThread(() -> eval("onPermissionResult('" + writeStatusToStaging().replace("'", "") + "')"));
         }
@@ -610,7 +633,14 @@ public class MainActivity extends AppCompatActivity {
         public String getStatusJson(String ignored) {
             try {
                 JSONObject o = new JSONObject();
+                String installId = prefs.getString("install_id", null);
+                if (installId == null) {
+                    installId = java.util.UUID.randomUUID().toString();
+                    prefs.edit().putString("install_id", installId).apply();
+                }
+                o.put("install_id", installId);
                 o.put("version", BuildConfig.VERSION_NAME);
+                o.put("isolation", "per-install");
                 o.put("oauth_configured", BuildConfig.OAUTH_WEB_CLIENT_ID != null && !BuildConfig.OAUTH_WEB_CLIENT_ID.isEmpty());
                 File[] files = stagingDir().listFiles((d, n) -> n != null && !n.equals("queue.json"));
                 o.put("staged_count", files == null ? 0 : files.length);
