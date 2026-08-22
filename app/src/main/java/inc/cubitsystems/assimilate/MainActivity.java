@@ -161,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /** Share staged files via system sheet — Founder can choose Drive. */
-    private void shareStaged() {
+    private void shareStagedFiles() {
         File dir = stagingDir();
         File[] files = dir.listFiles((d, n) -> n != null && !n.equals("queue.json"));
         ArrayList<Uri> uris = new ArrayList<>();
@@ -238,7 +238,7 @@ public class MainActivity extends AppCompatActivity {
 
         @JavascriptInterface
         public void shareStaged(String ignored) {
-            runOnUiThread(() -> shareStaged());
+            runOnUiThread(() -> shareStagedFiles());
         }
 
         @JavascriptInterface
