@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0c10" />
+  <title>Cubit Assimilate</title>
+  <style>
+    :root { --bg:#0a0c10; --card:#141a24; --line:#2a3142; --text:#eef1f6; --mute:#8b93a7; --ok:#3dd68c; --accent:#5b8cff; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; padding: 20px 16px 40px; }
+    h1 { font-size: 1.35rem; margin-bottom: 6px; }
+    .sub { color: var(--mute); font-size: 0.85rem; margin-bottom: 20px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+    .card h2 { font-size: 0.95rem; margin-bottom: 8px; color: var(--accent); }
+    ul { padding-left: 1.1rem; color: var(--mute); font-size: 0.9rem; line-height: 1.45; }
+    .ok { color: var(--ok); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; }
+    .warn { color: #e8b44c; font-size: 0.85rem; margin-top: 10px; }
+    button {
+      width: 100%; margin-top: 8px; padding: 14px; border-radius: 10px; border: 1px solid var(--line);
+      background: #1a2435; color: var(--text); font-weight: 600; font-size: 0.95rem;
+    }
+    button.primary { background: #1a3050; border-color: var(--accent); color: #cfe0ff; }
+    .tier { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; font-size: 0.9rem; color: var(--mute); }
+    .tier input { margin-top: 3px; }
+    #log { font-size: 0.8rem; color: var(--mute); margin-top: 12px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <p class="ok">CUBIT ASSIMILATE · v0.1 SCAFFOLD</p>
+  <h1>Founder device assimilation</h1>
+  <p class="sub">Scoped backup to Google Drive · biometric gate · no silent control</p>
+
+  <div class="card" id="s1">
+    <h2>1 · What this is</h2>
+    <ul>
+      <li>Backs up <strong>what you enable</strong> to Head Offices → Device Vault</li>
+      <li>Uses Android permission dialogs — nothing hidden</li>
+      <li>Does <strong>not</strong> read SMS, call logs, or messengers in v1</li>
+      <li>Does <strong>not</strong> claim root or secret device admin</li>
+    </ul>
+    <button type="button" class="primary" onclick="go(2)">Continue</button>
+  </div>
+
+  <div class="card" id="s2" hidden>
+    <h2>2 · Scopes</h2>
+    <div class="tier"><input type="checkbox" checked disabled /> <span><strong>Core</strong> — network, notifications, biometric (required)</span></div>
+    <div class="tier"><input type="checkbox" id="b" /> <span><strong>Photos & videos</strong> — Tier B (MediaStore / picker)</span></div>
+    <div class="tier"><input type="checkbox" id="c" /> <span><strong>Folders I select</strong> — Tier C (SAF)</span></div>
+    <div class="tier"><input type="checkbox" id="d" /> <span><strong>Broad all-files</strong> — Tier D (advanced, not default)</span></div>
+    <p class="warn">Native Android permission prompts appear only in the signed APK build — this web shell records intent.</p>
+    <button type="button" class="primary" onclick="go(3)">Continue</button>
+  </div>
+
+  <div class="card" id="s3" hidden>
+    <h2>3 · Founder key</h2>
+    <p style="color:var(--mute);font-size:0.9rem;line-height:1.45">High-risk actions (first backup, Tier D, vault wipe) require device biometrics or screen lock. Native BiometricPrompt ships in the APK.</p>
+    <button type="button" class="primary" onclick="go(4)">Simulate biometric OK</button>
+  </div>
+
+  <div class="card" id="s4" hidden>
+    <h2>4 · Run</h2>
+    <p style="color:var(--mute);font-size:0.9rem">Destination: Google Drive → Head Offices → <strong>00 - Device Vault</strong> → this device</p>
+    <button type="button" class="primary" onclick="runBackup()">Start backup (scaffold)</button>
+    <button type="button" onclick="log('Cancelled — no data moved')">Cancel</button>
+    <div id="log"></div>
+  </div>
+
+  <script>
+    function go(n) {
+      [1,2,3,4].forEach(i => document.getElementById('s'+i).hidden = i !== n);
+    }
+    function log(m) {
+      const el = document.getElementById('log');
+      el.textContent += m + '\n';
+    }
+    function runBackup() {
+      const scopes = ['core'];
+      if (document.getElementById('b').checked) scopes.push('photos');
+      if (document.getElementById('c').checked) scopes.push('saf-folders');
+      if (document.getElementById('d').checked) scopes.push('all-files');
+      log('Assimilate scaffold run');
+      log('Scopes: ' + scopes.join(', '));
+      log('Native APK will: request OS permissions → biometric → upload to Drive vault.');
+      log('Web shell cannot access phone storage or Drive write from here.');
+      log('Status: INTENT RECORDED · APK BUILD NEXT');
+      try {
+        localStorage.setItem('cubit_assimilate_intent', JSON.stringify({ scopes, t: Date.now() }));
+      } catch (e) {}
+    }
+  </script>
+</body>
+</html>
