@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Cubit Assimilate</string>
+    <string name="accessibility_desc">Cubit Assimilate extremity — window change awareness only. Does not log keystrokes. Enable only as Founder.</string>
 </resources>
