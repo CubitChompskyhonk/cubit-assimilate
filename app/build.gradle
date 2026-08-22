@@ -6,16 +6,17 @@ android {
         applicationId "inc.cubitsystems.assimilate"
         minSdk 26
         targetSdk 34
-        versionCode 3
-        versionName "0.2.1"
+        versionCode 4
+        versionName "0.3.0"
+        // Founder supplies via -P or local.properties later
+        buildConfigField "String", "OAUTH_WEB_CLIENT_ID", "\"${project.findProperty('OAUTH_WEB_CLIENT_ID') ?: ''}\""
+        buildConfigField "String", "DRIVE_PHOTOS_FOLDER_ID", "\"1_LhWLwzJw0X24N6jJFsPlLUOZHv85afZ\""
+        buildConfigField "String", "DRIVE_VAULT_FOLDER_ID", "\"1OPZA65RyCorgJTFEnaOA05W6SzpB6h2U\""
     }
+    buildFeatures { buildConfig true }
     buildTypes {
-        release {
-            minifyEnabled false
-        }
-        debug {
-            versionNameSuffix "-debug"
-        }
+        release { minifyEnabled false }
+        debug { versionNameSuffix "-debug" }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -26,4 +27,6 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.biometric:biometric:1.1.0'
     implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.documentfile:documentfile:1.0.1'
+    implementation 'androidx.work:work-runtime:2.9.0'
 }
