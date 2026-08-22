@@ -6,206 +6,267 @@
   <title>Cubit Assimilate</title>
   <style>
     :root {
-      --bg: #0a0c10; --card: #141a24; --line: #2a3142; --text: #eef1f6;
-      --mute: #8b93a7; --ok: #3dd68c; --accent: #5b8cff; --warn: #e8b44c;
+      --bg:#0a0c10; --card:#141a24; --line:#2a3142; --text:#eef1f6;
+      --mute:#8b93a7; --ok:#3dd68c; --accent:#5b8cff;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: var(--bg); color: var(--text);
-      min-height: 100dvh; padding: 16px 14px 32px;
-    }
-    header { margin-bottom: 14px; }
-    .brand { color: var(--ok); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; }
-    h1 { font-size: 1.25rem; margin-top: 4px; }
-    .sub { color: var(--mute); font-size: 0.82rem; margin-top: 4px; line-height: 1.4; }
-    .card {
-      background: var(--card); border: 1px solid var(--line);
-      border-radius: 12px; padding: 12px 14px; margin-bottom: 12px;
-    }
-    .card h2 { font-size: 0.8rem; color: var(--accent); letter-spacing: 0.04em; margin-bottom: 10px; text-transform: uppercase; }
-    .row {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 10px; padding: 10px 0; border-bottom: 1px solid #1e2533;
-    }
-    .row:last-child { border-bottom: none; }
-    .row .meta { flex: 1; min-width: 0; }
-    .row .title { font-size: 0.92rem; font-weight: 600; }
-    .row .desc { font-size: 0.75rem; color: var(--mute); margin-top: 2px; }
-    /* toggle */
-    .sw {
-      position: relative; width: 48px; height: 28px; flex-shrink: 0;
-    }
-    .sw input { opacity: 0; width: 0; height: 0; }
-    .sw span {
-      position: absolute; inset: 0; background: #2a3142; border-radius: 999px;
-      transition: 0.15s; cursor: pointer;
-    }
-    .sw span:before {
-      content: ""; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px;
-      background: #cfd6e6; border-radius: 50%; transition: 0.15s;
-    }
-    .sw input:checked + span { background: #2a5080; }
-    .sw input:checked + span:before { transform: translateX(20px); background: #9ec0ff; }
-    .sw input:disabled + span { opacity: 0.45; }
-    button {
-      width: 100%; margin-top: 8px; padding: 14px; border-radius: 12px;
-      border: 1px solid var(--line); background: #1a2435; color: var(--text);
-      font-weight: 700; font-size: 0.95rem;
-    }
-    button.primary {
-      background: linear-gradient(180deg, #1e3a5f, #152538);
-      border-color: var(--accent); color: #d6e6ff;
-    }
-    button.ghost { font-weight: 600; font-size: 0.85rem; padding: 10px; }
-    #log {
-      margin-top: 10px; font-family: ui-monospace, monospace; font-size: 0.72rem;
-      color: var(--mute); white-space: pre-wrap; max-height: 28dvh; overflow: auto;
-    }
-    .idline { font-size: 0.72rem; color: var(--mute); margin-top: 8px; word-break: break-all; }
-    .pill {
-      display: inline-block; font-size: 0.65rem; padding: 2px 6px; border-radius: 999px;
-      border: 1px solid var(--line); color: var(--mute); margin-left: 4px;
-    }
-    .pill.on { color: var(--ok); border-color: #2a5a40; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:system-ui,sans-serif; background:var(--bg); color:var(--text);
+      min-height:100dvh; padding:14px 12px 40px; }
+    .brand { color:var(--ok); font-size:0.68rem; font-weight:700; letter-spacing:0.08em; }
+    h1 { font-size:1.2rem; margin-top:4px; }
+    .sub { color:var(--mute); font-size:0.8rem; margin:4px 0 12px; line-height:1.35; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px;
+      padding:10px 12px; margin-bottom:10px; }
+    .card h2 { font-size:0.72rem; color:var(--accent); text-transform:uppercase;
+      letter-spacing:0.05em; margin-bottom:6px; }
+    .row { display:flex; align-items:center; justify-content:space-between; gap:8px;
+      padding:8px 0; border-bottom:1px solid #1e2533; }
+    .row:last-child { border-bottom:none; }
+    .title { font-size:0.88rem; font-weight:600; }
+    .desc { font-size:0.7rem; color:var(--mute); }
+    .sw { position:relative; width:46px; height:26px; flex-shrink:0; }
+    .sw input { opacity:0; width:0; height:0; }
+    .sw span { position:absolute; inset:0; background:#2a3142; border-radius:999px; cursor:pointer; }
+    .sw span:before { content:""; position:absolute; width:20px; height:20px; left:3px; top:3px;
+      background:#cfd6e6; border-radius:50%; transition:0.15s; }
+    .sw input:checked + span { background:#2a5080; }
+    .sw input:checked + span:before { transform:translateX(20px); background:#9ec0ff; }
+    button { width:100%; margin-top:7px; padding:12px; border-radius:11px; border:1px solid var(--line);
+      background:#1a2435; color:var(--text); font-weight:700; font-size:0.9rem; }
+    button.primary { background:linear-gradient(180deg,#1e3a5f,#152538); border-color:var(--accent); color:#d6e6ff; }
+    button.ghost { font-weight:600; font-size:0.8rem; padding:9px; }
+    #log { margin-top:8px; font-family:ui-monospace,monospace; font-size:0.68rem; color:var(--mute);
+      white-space:pre-wrap; max-height:22dvh; overflow:auto; }
+    .idline { font-size:0.68rem; color:var(--mute); margin-top:6px; word-break:break-all; }
+    .toolbar { display:flex; gap:8px; margin-bottom:10px; }
+    .toolbar button { margin-top:0; }
   </style>
 </head>
 <body>
-  <header>
-    <div class="brand">CUBIT ASSIMILATE · v1.0.0</div>
-    <h1>Device assimilation</h1>
-    <p class="sub">Self-contained. Your toggles only. Data stays in this install’s vault path — no other users.</p>
-  </header>
+  <div class="brand">CUBIT ASSIMILATE · v1.1.0</div>
+  <h1>Permission console</h1>
+  <p class="sub">Toggle every major system capability. Off = not used in Run. Grant opens OS dialogs or settings where required. Per-install isolation.</p>
 
-  <div class="card">
-    <h2>Permissions</h2>
-    <div class="row">
-      <div class="meta"><div class="title">Photos</div><div class="desc">Recent images</div></div>
-      <label class="sw"><input type="checkbox" id="p_photos" checked /><span></span></label>
-    </div>
-    <div class="row">
-      <div class="meta"><div class="title">Video</div><div class="desc">Recent videos</div></div>
-      <label class="sw"><input type="checkbox" id="p_video" /><span></span></label>
-    </div>
-    <div class="row">
-      <div class="meta"><div class="title">Audio</div><div class="desc">Device audio library</div></div>
-      <label class="sw"><input type="checkbox" id="p_audio" /><span></span></label>
-    </div>
-    <div class="row">
-      <div class="meta"><div class="title">Downloads</div><div class="desc">Requires All files access</div></div>
-      <label class="sw"><input type="checkbox" id="p_downloads" /><span></span></label>
-    </div>
-    <div class="row">
-      <div class="meta"><div class="title">SMS</div><div class="desc">Export messages (sensitive)</div></div>
-      <label class="sw"><input type="checkbox" id="p_sms" /><span></span></label>
-    </div>
-    <div class="row">
-      <div class="meta"><div class="title">Call log</div><div class="desc">Export recent calls</div></div>
-      <label class="sw"><input type="checkbox" id="p_calls" /><span></span></label>
-    </div>
-    <div class="row">
-      <div class="meta"><div class="title">Contacts</div><div class="desc">Name & number export</div></div>
-      <label class="sw"><input type="checkbox" id="p_contacts" /><span></span></label>
-    </div>
-    <div class="row">
-      <div class="meta"><div class="title">Installed apps</div><div class="desc">Package inventory</div></div>
-      <label class="sw"><input type="checkbox" id="p_packages" checked /><span></span></label>
-    </div>
+  <div class="toolbar">
+    <button type="button" class="ghost" onclick="setAll(true)">All on</button>
+    <button type="button" class="ghost" onclick="setAll(false)">All off</button>
+    <button type="button" class="ghost" onclick="grantEnabled()">Grant enabled</button>
   </div>
 
-  <div class="card">
-    <h2>System gates</h2>
+<div class="card"><h2>Media</h2>
     <div class="row">
-      <div class="meta"><div class="title">Request media OS permission</div><div class="desc">Photos / video / audio dialogs</div></div>
-      <button class="ghost" style="width:auto;padding:8px 12px;margin:0" type="button" onclick="requestMedia()">Grant</button>
+      <div class="meta"><div class="title">Photos</div><div class="desc">Read images</div></div>
+      <label class="sw"><input type="checkbox" id="p_photos" data-perm="photos" checked /><span></span></label>
     </div>
     <div class="row">
-      <div class="meta"><div class="title">Held scopes</div><div class="desc">SMS / calls / contacts — biometric</div></div>
-      <button class="ghost" style="width:auto;padding:8px 12px;margin:0" type="button" onclick="requestHeld()">Grant</button>
+      <div class="meta"><div class="title">Video</div><div class="desc">Read videos</div></div>
+      <label class="sw"><input type="checkbox" id="p_video" data-perm="video" /><span></span></label>
     </div>
     <div class="row">
-      <div class="meta"><div class="title">All files access</div><div class="desc">For Downloads toggle</div></div>
-      <button class="ghost" style="width:auto;padding:8px 12px;margin:0" type="button" onclick="requestAllFiles()">Open</button>
+      <div class="meta"><div class="title">Audio</div><div class="desc">Read audio files</div></div>
+      <label class="sw"><input type="checkbox" id="p_audio" data-perm="audio" /><span></span></label>
     </div>
     <div class="row">
-      <div class="meta"><div class="title">Folder (SAF)</div><div class="desc">Optional extra tree</div></div>
-      <button class="ghost" style="width:auto;padding:8px 12px;margin:0" type="button" onclick="requestSaf()">Pick</button>
+      <div class="meta"><div class="title">Camera</div><div class="desc">Camera access</div></div>
+      <label class="sw"><input type="checkbox" id="p_camera" data-perm="camera" /><span></span></label>
     </div>
-  </div>
+    <div class="row">
+      <div class="meta"><div class="title">Microphone</div><div class="desc">Record audio</div></div>
+      <label class="sw"><input type="checkbox" id="p_microphone" data-perm="microphone" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Downloads / all files</div><div class="desc">All-files special access</div></div>
+      <label class="sw"><input type="checkbox" id="p_downloads" data-perm="downloads" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">SAF folder</div><div class="desc">User-picked directory</div></div>
+      <label class="sw"><input type="checkbox" id="p_saf" data-perm="saf" /><span></span></label>
+    </div>
+</div>
+<div class="card"><h2>Personal</h2>
+    <div class="row">
+      <div class="meta"><div class="title">SMS</div><div class="desc">Read SMS export</div></div>
+      <label class="sw"><input type="checkbox" id="p_sms" data-perm="sms" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Send SMS</div><div class="desc">Send SMS permission</div></div>
+      <label class="sw"><input type="checkbox" id="p_send_sms" data-perm="send_sms" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Call log</div><div class="desc">Read call history</div></div>
+      <label class="sw"><input type="checkbox" id="p_calls" data-perm="calls" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Phone state</div><div class="desc">Read phone state / numbers</div></div>
+      <label class="sw"><input type="checkbox" id="p_phone" data-perm="phone" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Place calls</div><div class="desc">CALL_PHONE</div></div>
+      <label class="sw"><input type="checkbox" id="p_call_phone" data-perm="call_phone" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Contacts read</div><div class="desc">Read contacts</div></div>
+      <label class="sw"><input type="checkbox" id="p_contacts" data-perm="contacts" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Contacts write</div><div class="desc">Write contacts</div></div>
+      <label class="sw"><input type="checkbox" id="p_contacts_write" data-perm="contacts_write" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Calendar read</div><div class="desc">Read calendar</div></div>
+      <label class="sw"><input type="checkbox" id="p_calendar" data-perm="calendar" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Calendar write</div><div class="desc">Write calendar</div></div>
+      <label class="sw"><input type="checkbox" id="p_calendar_write" data-perm="calendar_write" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Accounts</div><div class="desc">GET_ACCOUNTS</div></div>
+      <label class="sw"><input type="checkbox" id="p_accounts" data-perm="accounts" /><span></span></label>
+    </div>
+</div>
+<div class="card"><h2>Location & sensors</h2>
+    <div class="row">
+      <div class="meta"><div class="title">Location (fine)</div><div class="desc">Fine location</div></div>
+      <label class="sw"><input type="checkbox" id="p_location" data-perm="location" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Location (coarse)</div><div class="desc">Coarse location</div></div>
+      <label class="sw"><input type="checkbox" id="p_location_coarse" data-perm="location_coarse" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Background location</div><div class="desc">Background location</div></div>
+      <label class="sw"><input type="checkbox" id="p_location_bg" data-perm="location_bg" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Activity recognition</div><div class="desc">Steps / motion</div></div>
+      <label class="sw"><input type="checkbox" id="p_activity" data-perm="activity" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Body sensors</div><div class="desc">Heart rate etc.</div></div>
+      <label class="sw"><input type="checkbox" id="p_body_sensors" data-perm="body_sensors" /><span></span></label>
+    </div>
+</div>
+<div class="card"><h2>Nearby</h2>
+    <div class="row">
+      <div class="meta"><div class="title">Bluetooth</div><div class="desc">BT connect/scan</div></div>
+      <label class="sw"><input type="checkbox" id="p_bluetooth" data-perm="bluetooth" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Wi‑Fi state</div><div class="desc">Wi‑Fi read/change</div></div>
+      <label class="sw"><input type="checkbox" id="p_wifi" data-perm="wifi" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">NFC</div><div class="desc">NFC access</div></div>
+      <label class="sw"><input type="checkbox" id="p_nfc" data-perm="nfc" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Nearby Wi‑Fi devices</div><div class="desc">Nearby devices</div></div>
+      <label class="sw"><input type="checkbox" id="p_nearby_wifi" data-perm="nearby_wifi" /><span></span></label>
+    </div>
+</div>
+<div class="card"><h2>System</h2>
+    <div class="row">
+      <div class="meta"><div class="title">Notifications</div><div class="desc">Post notifications</div></div>
+      <label class="sw"><input type="checkbox" id="p_notifications" data-perm="notifications" checked /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Ignore battery opts</div><div class="desc">Unrestricted battery</div></div>
+      <label class="sw"><input type="checkbox" id="p_battery" data-perm="battery" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Display over apps</div><div class="desc">SYSTEM_ALERT_WINDOW</div></div>
+      <label class="sw"><input type="checkbox" id="p_overlay" data-perm="overlay" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Usage access</div><div class="desc">Package usage stats</div></div>
+      <label class="sw"><input type="checkbox" id="p_usage" data-perm="usage" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Exact alarms</div><div class="desc">Schedule exact alarms</div></div>
+      <label class="sw"><input type="checkbox" id="p_exact_alarm" data-perm="exact_alarm" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Install packages</div><div class="desc">Request install packs</div></div>
+      <label class="sw"><input type="checkbox" id="p_install_packages" data-perm="install_packages" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">App list</div><div class="desc">Query installed apps</div></div>
+      <label class="sw"><input type="checkbox" id="p_packages" data-perm="packages" checked /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Accessibility</div><div class="desc">Window awareness service</div></div>
+      <label class="sw"><input type="checkbox" id="p_accessibility" data-perm="accessibility" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Device admin</div><div class="desc">Force-lock admin</div></div>
+      <label class="sw"><input type="checkbox" id="p_device_admin" data-perm="device_admin" /><span></span></label>
+    </div>
+    <div class="row">
+      <div class="meta"><div class="title">Boot receiver</div><div class="desc">Run flag after boot</div></div>
+      <label class="sw"><input type="checkbox" id="p_boot" data-perm="boot" /><span></span></label>
+    </div>
+</div>
 
   <div class="card">
-    <h2>This install</h2>
+    <h2>Run</h2>
     <div class="idline" id="installId">install_id: …</div>
-    <div class="idline" id="statusLine">status: idle</div>
-    <button type="button" class="primary" id="runBtn" onclick="runAssimilation()">Run assimilation</button>
+    <button type="button" class="primary" onclick="runAssimilation()">Run assimilation</button>
     <button type="button" onclick="pushStatus()">Write status.json</button>
     <button type="button" onclick="shareStaged()">Share results</button>
-    <button type="button" onclick="clearStaging()">Clear local queue</button>
+    <button type="button" onclick="clearStaging()">Clear queue</button>
     <div id="log"></div>
   </div>
 
   <script>
-    const KEYS = ['photos','video','audio','downloads','sms','calls','contacts','packages'];
-    function native(n,p){ try{ if(window.Assimilate&&window.Assimilate[n]){ window.Assimilate[n](p||''); return true;} }catch(e){} return false; }
-    function log(m){ const e=document.getElementById('log'); e.textContent += m + '\n'; e.scrollTop = e.scrollHeight; }
-    function loadPrefs(){
-      try{
-        const raw = localStorage.getItem('assim_toggles');
-        if(!raw) return;
-        const o = JSON.parse(raw);
-        KEYS.forEach(k => {
-          const el = document.getElementById('p_'+k);
-          if(el && typeof o[k] === 'boolean') el.checked = o[k];
-        });
-      }catch(e){}
-    }
+    const KEYS = ['photos', 'video', 'audio', 'camera', 'microphone', 'downloads', 'saf', 'sms', 'send_sms', 'calls', 'phone', 'call_phone', 'contacts', 'contacts_write', 'calendar', 'calendar_write', 'accounts', 'location', 'location_coarse', 'location_bg', 'activity', 'body_sensors', 'bluetooth', 'wifi', 'nfc', 'nearby_wifi', 'notifications', 'battery', 'overlay', 'usage', 'exact_alarm', 'install_packages', 'packages', 'accessibility', 'device_admin', 'boot'];
+    function native(n,p){ try{ if(window.Assimilate&&window.Assimilate[n]){ window.Assimilate[n](p||''); return true; } }catch(e){} return false; }
+    function log(m){ const e=document.getElementById('log'); e.textContent += m+'\n'; e.scrollTop=e.scrollHeight; }
     function savePrefs(){
-      const o = {};
-      KEYS.forEach(k => { o[k] = !!document.getElementById('p_'+k).checked; });
+      const o={}; KEYS.forEach(k=>{ const el=document.getElementById('p_'+k); if(el) o[k]=!!el.checked; });
       localStorage.setItem('assim_toggles', JSON.stringify(o));
       native('saveTogglePrefs', JSON.stringify(o));
     }
-    KEYS.forEach(k => {
-      const el = document.getElementById('p_'+k);
-      if(el) el.addEventListener('change', savePrefs);
-    });
-    function requestMedia(){ native('requestMediaPermissions'); }
-    function requestHeld(){ native('requestHeldPermissions'); }
-    function requestAllFiles(){ native('requestAllFilesAccess'); }
-    function requestSaf(){ native('requestSaf'); }
+    function loadPrefs(){
+      try{
+        const o=JSON.parse(localStorage.getItem('assim_toggles')||'{}');
+        KEYS.forEach(k=>{ const el=document.getElementById('p_'+k); if(el && typeof o[k]==='boolean') el.checked=o[k]; });
+      }catch(e){}
+    }
+    function setAll(on){ KEYS.forEach(k=>{ const el=document.getElementById('p_'+k); if(el) el.checked=on; }); savePrefs(); }
+    KEYS.forEach(k=>{ const el=document.getElementById('p_'+k); if(el) el.addEventListener('change', savePrefs); });
+    function enabledScopes(){
+      const s=['core'];
+      KEYS.forEach(k=>{ const el=document.getElementById('p_'+k); if(el&&el.checked) s.push(k); });
+      return s;
+    }
+    function grantEnabled(){
+      savePrefs();
+      const s=enabledScopes().filter(x=>x!=='core');
+      log('Granting: '+s.join(', '));
+      native('grantPermissionSet', s.join(','));
+    }
     function runAssimilation(){
       savePrefs();
-      const scopes = ['core'];
-      KEYS.forEach(k => { if(document.getElementById('p_'+k).checked) scopes.push(k); });
-      document.getElementById('statusLine').textContent = 'status: running…';
-      log('Run assimilation → ' + scopes.join(', '));
-      native('runAssimilation', scopes.join(','));
+      const s=enabledScopes();
+      log('Run → '+s.join(', '));
+      native('runAssimilation', s.join(','));
     }
     function pushStatus(){ native('pushStatus'); }
     function shareStaged(){ native('shareStaged'); }
     function clearStaging(){ native('clearStaging'); }
-    function onPermissionResult(msg){
-      log(msg||'');
-      if(msg && msg.indexOf('Staged')>=0) document.getElementById('statusLine').textContent = 'status: staged — share when ready';
-    }
-    function onBiometricResult(ok){
-      if(ok==='1'||ok===true) log('Biometric OK');
-      else log('Biometric cancelled');
-    }
+    function onPermissionResult(msg){ log(msg||''); }
+    function onBiometricResult(ok){ log(ok==='1'||ok===true ? 'Biometric OK' : 'Biometric cancelled'); }
     function refreshInstall(){
       try{
-        const o = JSON.parse(window.Assimilate.getStatusJson(''));
-        document.getElementById('installId').textContent =
-          'install_id: ' + (o.install_id||'…') + ' · v' + (o.version||'?');
-      }catch(e){
-        document.getElementById('installId').textContent = 'install_id: (open on APK)';
-      }
+        const o=JSON.parse(window.Assimilate.getStatusJson(''));
+        document.getElementById('installId').textContent='install_id: '+(o.install_id||'?')+' · v'+(o.version||'');
+      }catch(e){}
     }
-    window.onPermissionResult = onPermissionResult;
-    window.onBiometricResult = onBiometricResult;
+    window.onPermissionResult=onPermissionResult;
+    window.onBiometricResult=onBiometricResult;
     loadPrefs();
-    setTimeout(refreshInstall, 200);
-    setTimeout(refreshInstall, 800);
+    setTimeout(refreshInstall, 300);
   </script>
 </body>
 </html>
