@@ -5,43 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Cubit Assimilate</title>
   <style>
-    :root { --bg:#0a0c10; --card:#141a24; --line:#2a3142; --text:#eef1f6; --mute:#8b93a7; --ok:#3dd68c; --accent:#5b8cff; }
+    :root { --bg:#0a0c10; --card:#141a24; --line:#2a3142; --text:#eef1f6; --mute:#8b93a7; --ok:#3dd68c; --accent:#5b8cff; --warn:#e8b44c; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; padding: 20px 16px 40px; }
-    h1 { font-size: 1.25rem; margin-bottom: 6px; }
-    .sub { color: var(--mute); font-size: 0.85rem; margin-bottom: 16px; }
+    h1 { font-size: 1.25rem; }
+    .sub { color: var(--mute); font-size: 0.85rem; margin: 6px 0 16px; }
     .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
     .card h2 { font-size: 0.95rem; margin-bottom: 8px; color: var(--accent); }
-    ul { padding-left: 1.1rem; color: var(--mute); font-size: 0.9rem; line-height: 1.45; }
+    ul { padding-left: 1.1rem; color: var(--mute); font-size: 0.88rem; line-height: 1.45; }
     .ok { color: var(--ok); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; }
+    .warn { color: var(--warn); font-size: 0.8rem; margin-top: 8px; }
     button { width: 100%; margin-top: 8px; padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: #1a2435; color: var(--text); font-weight: 600; font-size: 0.9rem; }
     button.primary { background: #1a3050; border-color: var(--accent); color: #cfe0ff; }
-    .tier { display: flex; gap: 8px; margin: 8px 0; font-size: 0.9rem; color: var(--mute); }
-    #log { font-size: 0.78rem; color: var(--mute); margin-top: 10px; white-space: pre-wrap; font-family: monospace; }
-    #status { font-size: 0.8rem; color: var(--mute); line-height: 1.4; white-space: pre-wrap; }
+    .tier { display: flex; gap: 8px; margin: 8px 0; font-size: 0.88rem; color: var(--mute); }
+    #log, #status { font-size: 0.78rem; color: var(--mute); margin-top: 10px; white-space: pre-wrap; font-family: monospace; }
   </style>
 </head>
 <body>
-  <p class="ok">CUBIT ASSIMILATE · v0.4.0</p>
-  <h1>Assimilate</h1>
-  <p class="sub">Share-to-Drive · SAF · battery · expanded staging</p>
+  <p class="ok">CUBIT ASSIMILATE · v0.5.0</p>
+  <h1>Expanded assimilation</h1>
+  <p class="sub">Photos · video · audio · SAF · Downloads (Tier D) · share to Drive</p>
 
   <div class="card" id="s1">
     <h2>Start</h2>
     <ul>
-      <li>Stage photos / SAF folders</li>
-      <li><strong>Share staged</strong> → pick Google Drive (works without OAuth client)</li>
-      <li>OAuth auto-upload still optional later</li>
+      <li>More media types + optional all-files for Downloads</li>
+      <li>Tier D requires biometric then system All files screen</li>
+      <li>Still no SMS / Accessibility / Device Admin</li>
     </ul>
     <button type="button" class="primary" onclick="go(2)">Continue</button>
     <button type="button" onclick="go(5)">Settings</button>
   </div>
 
   <div class="card" id="s2" hidden>
-    <h2>Permissions & sources</h2>
-    <div class="tier"><input type="checkbox" id="b" checked /> <span>Photos (up to 25)</span></div>
-    <button type="button" class="primary" onclick="requestPerms()">Request OS permissions</button>
-    <button type="button" onclick="requestSaf()">Pick folder (SAF)</button>
+    <h2>Scopes</h2>
+    <div class="tier"><input type="checkbox" id="b" checked /> <span>Photos</span></div>
+    <div class="tier"><input type="checkbox" id="v" /> <span>Video</span></div>
+    <div class="tier"><input type="checkbox" id="a" /> <span>Audio</span></div>
+    <div class="tier"><input type="checkbox" id="d" /> <span>Downloads (Tier D all-files)</span></div>
+    <button type="button" class="primary" onclick="requestPerms()">Request media permissions</button>
+    <button type="button" onclick="requestSaf()">SAF folder</button>
+    <button type="button" onclick="requestAllFiles()">Enable All files access (Tier D)</button>
+    <p class="warn">All files is powerful — enable only if you want Downloads assimilation.</p>
     <button type="button" onclick="go(3)">Next: biometric</button>
   </div>
 
@@ -53,61 +58,63 @@
 
   <div class="card" id="s4" hidden>
     <h2>Stage & send</h2>
-    <button type="button" class="primary" onclick="runBackup()">Stage + foreground service</button>
-    <button type="button" class="primary" onclick="shareStaged()">Share staged → Drive / …</button>
-    <button type="button" onclick="openVault()">Open Device Vault</button>
-    <button type="button" onclick="clearStaging()">Clear staging queue</button>
+    <button type="button" class="primary" onclick="runBackup()">Stage selected scopes</button>
+    <button type="button" class="primary" onclick="shareStaged()">Share staged → Drive</button>
+    <button type="button" onclick="openVault()">Device Vault</button>
+    <button type="button" onclick="clearStaging()">Clear queue</button>
     <div id="log"></div>
   </div>
 
   <div class="card" id="s5" hidden>
     <h2>Settings</h2>
-    <div id="status">…</div>
+    <div id="status"></div>
     <button type="button" onclick="refreshStatus()">Refresh</button>
+    <button type="button" onclick="setSchedule(true)">Enable boot schedule flag</button>
+    <button type="button" onclick="setSchedule(false)">Disable schedule</button>
     <button type="button" onclick="openAppSettings()">App settings</button>
     <button type="button" onclick="openBattery()">Battery unrestricted</button>
-    <button type="button" onclick="openUnknown()">Install unknown apps</button>
-    <button type="button" onclick="openVault()">Device Vault</button>
     <button type="button" onclick="go(1)">Back</button>
   </div>
 
   <script>
-    function go(n) { [1,2,3,4,5].forEach(i => { const el=document.getElementById('s'+i); if(el) el.hidden=i!==n; }); if(n===5) refreshStatus(); }
-    function log(m) { const el=document.getElementById('log'); if(el) el.textContent+=m+'\n'; }
-    function native(name, payload) {
-      try { if (window.Assimilate && window.Assimilate[name]) { window.Assimilate[name](payload||''); return true; } } catch(e) {}
-      return false;
-    }
-    function requestPerms() { native('requestMediaPermissions'); go(3); }
-    function requestSaf() { native('requestSaf'); }
-    function runBiometric() { if (!native('requestBiometric')) go(4); }
-    function onBiometricResult(ok) { if (ok==='1'||ok===true) go(4); else log('Auth incomplete'); }
-    function onPermissionResult(msg) { log(msg||''); }
-    function runBackup() {
+    function go(n){ [1,2,3,4,5].forEach(i=>{const e=document.getElementById('s'+i);if(e)e.hidden=i!==n;}); if(n===5)refreshStatus(); }
+    function log(m){ const e=document.getElementById('log'); if(e)e.textContent+=m+'\n'; }
+    function native(n,p){ try{ if(window.Assimilate&&window.Assimilate[n]){ window.Assimilate[n](p||''); return true;} }catch(e){} return false; }
+    function requestPerms(){ native('requestMediaPermissions'); }
+    function requestSaf(){ native('requestSaf'); }
+    function requestAllFiles(){ native('requestAllFilesAccess'); }
+    function runBiometric(){ if(!native('requestBiometric')) go(4); }
+    function onBiometricResult(ok){ if(ok==='1'||ok===true) go(4); else log('Auth incomplete'); }
+    function onPermissionResult(msg){ log(msg||''); }
+    function runBackup(){
       const scopes=['core'];
-      if (document.getElementById('b').checked) scopes.push('photos');
+      if(document.getElementById('b').checked) scopes.push('photos');
+      if(document.getElementById('v').checked) scopes.push('video');
+      if(document.getElementById('a').checked) scopes.push('audio');
+      if(document.getElementById('d').checked) scopes.push('downloads');
       native('startBackup', scopes.join(','));
     }
-    function shareStaged() { native('shareStaged'); }
-    function clearStaging() { native('clearStaging'); }
-    function openVault() { native('openVault'); }
-    function openAppSettings() { native('openAppSettings'); }
-    function openBattery() { native('openBatterySettings'); }
-    function openUnknown() { native('openUnknownSources'); }
-    function refreshStatus() {
-      try {
-        const raw = window.Assimilate.getStatusJson('');
-        const o = JSON.parse(raw);
+    function shareStaged(){ native('shareStaged'); }
+    function clearStaging(){ native('clearStaging'); }
+    function openVault(){ native('openVault'); }
+    function openAppSettings(){ native('openAppSettings'); }
+    function openBattery(){ native('openBatterySettings'); }
+    function setSchedule(on){ native('setSchedule', on?'1':'0'); refreshStatus(); }
+    function refreshStatus(){
+      try{
+        const o=JSON.parse(window.Assimilate.getStatusJson(''));
         document.getElementById('status').textContent =
-          'version: ' + o.version +
-          '\nstaged: ' + o.staged_count +
-          '\nmedia: ' + o.media_images +
-          '\noauth: ' + o.oauth_configured +
-          '\nbattery_unrestricted: ' + o.ignoring_battery_optimizations;
-      } catch (e) { document.getElementById('status').textContent = 'Status on APK only'; }
+          'version: '+o.version+
+          '\nstaged: '+o.staged_count+
+          '\nmedia_images: '+o.media_images+
+          '\nmedia_audio: '+o.media_audio+
+          '\nall_files: '+o.all_files_access+
+          '\nschedule: '+o.schedule_enabled+
+          '\nbattery_ok: '+o.ignoring_battery_optimizations;
+      }catch(e){ document.getElementById('status').textContent='APK only'; }
     }
-    window.onBiometricResult = onBiometricResult;
-    window.onPermissionResult = onPermissionResult;
+    window.onBiometricResult=onBiometricResult;
+    window.onPermissionResult=onPermissionResult;
   </script>
 </body>
 </html>
