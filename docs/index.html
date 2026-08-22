@@ -27,7 +27,7 @@
   </style>
 </head>
 <body>
-  <p class="ok">CUBIT ASSIMILATE · v0.1 SCAFFOLD</p>
+  <p class="ok">CUBIT ASSIMILATE · v0.2 · VAULT LIVE</p>
   <h1>Founder device assimilation</h1>
   <p class="sub">Scoped backup to Google Drive · biometric gate · no silent control</p>
 
@@ -60,7 +60,7 @@
 
   <div class="card" id="s4" hidden>
     <h2>4 · Run</h2>
-    <p style="color:var(--mute);font-size:0.9rem">Destination: Google Drive → Head Offices → <strong>00 - Device Vault</strong> → this device</p>
+    <p style="color:var(--mute);font-size:0.9rem">Destination: <a href="https://drive.google.com/drive/folders/1OPZA65RyCorgJTFEnaOA05W6SzpB6h2U" style="color:#5b8cff">Device Vault / founder-android-01</a></p>
     <button type="button" class="primary" onclick="runBackup()">Start backup (scaffold)</button>
     <button type="button" onclick="log('Cancelled — no data moved')">Cancel</button>
     <div id="log"></div>
@@ -83,7 +83,8 @@
       log('Scopes: ' + scopes.join(', '));
       log('Native APK will: request OS permissions → biometric → upload to Drive vault.');
       log('Web shell cannot access phone storage or Drive write from here.');
-      log('Status: INTENT RECORDED · APK BUILD NEXT');
+      log('Vault ready on Drive.');
+      log('Status: INTENT RECORDED · native backup modules next');
       try {
         localStorage.setItem('cubit_assimilate_intent', JSON.stringify({ scopes, t: Date.now() }));
       } catch (e) {}
